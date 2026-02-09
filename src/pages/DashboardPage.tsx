@@ -5,7 +5,22 @@ import { useTeamStore } from '../store/teamStore';
 import { useNotificationStore } from '../store/notificationStore';
 import { SummaryCard } from '../components/Card';
 import { Avatar } from '../components/Avatar';
-import { Badge, getStatusVariant } from '../components/Badge';
+import { Badge } from '../components/Badge';
+
+interface TeamActivityItem {
+  id: string;
+  memberName: string;
+  action: string;
+  project: string;
+  timestamp: string;
+}
+
+interface DashboardStats {
+  avgCompletionTime: number;
+  activeSprintItems: number;
+  blockedItems: number;
+  upcomingDeadlines: number;
+}
 
 // Budget data for the dashboard overview table
 interface BudgetEntry {
@@ -43,14 +58,110 @@ export function DashboardPage() {
   const { members, fetchMembers } = useTeamStore();
   const { notifications } = useNotificationStore();
 
+  // BUG:BZ-086 - Loading spinner never disappears
+  // The loading state is set to true but never set to false in the success handler
+  const [teamActivityLoading, setTeamActivityLoading] = useState(true);
+  const [teamActivity, setTeamActivity] = useState<TeamActivityItem[]>([]);
+
+  // BUG:BZ-087 - Error state not shown on API failure
+  // Error is caught but the error state is never set, leaving an empty page
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+
+  // BUG:BZ-088 - Skeleton loader doesn't match real layout
+  const [insightsLoading, setInsightsLoading] = useState(true);
+  const [insightsData, setInsightsData] = useState<{ title: string; value: string; change: string }[]>([]);
+
   useEffect(() => {
     fetchProjects();
     fetchMembers();
   }, [fetchProjects, fetchMembers]);
 
+  // BUG:BZ-086 - Fetch team activity but never clear loading state on success
+  useEffect(() => {
+    setTeamActivityLoading(true);
+    const timer = setTimeout(() => {
+      // Simulated API response — data arrives but loading is not set to false
+      const activityData: TeamActivityItem[] = [
+        { id: 'ta1', memberName: 'Sarah Chen', action: 'completed task', project: 'Website Redesign', timestamp: new Date(Date.now() - 300000).toISOString() },
+        { id: 'ta2', memberName: 'Mike Johnson', action: 'created PR', project: 'Mobile App v2.0', timestamp: new Date(Date.now() - 900000).toISOString() },
+        { id: 'ta3', memberName: 'Emily Davis', action: 'updated status', project: 'Analytics Platform', timestamp: new Date(Date.now() - 1800000).toISOString() },
+        { id: 'ta4', memberName: 'James Wilson', action: 'added comment', project: 'Customer Portal', timestamp: new Date(Date.now() - 3600000).toISOString() },
+      ];
+      setTeamActivity(activityData);
+      // BUG: Missing setTeamActivityLoading(false) — spinner never stops
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-086')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-086',
+            timestamp: Date.now(),
+            description: 'Loading spinner never disappears after data loads',
+            page: 'Dashboard',
+          });
+        }
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // BUG:BZ-087 - Fetch dashboard stats but don't show error on failure
+  useEffect(() => {
+    setStatsLoading(true);
+    fetch('/api/dashboard/stats')
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load dashboard stats');
+        return res.json();
+      })
+      .then((data) => {
+        setDashboardStats(data);
+        setStatsLoading(false);
+      })
+      .catch(() => {
+        // BUG: Error is caught, loading is stopped, but error state is never set
+        // so the user sees an empty section with no error message or retry button
+        setStatsLoading(false);
+        // Missing: setStatsError('Failed to load dashboard stats');
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-087')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-087',
+              timestamp: Date.now(),
+              description: 'Error state not shown on API failure',
+              page: 'Dashboard',
+            });
+          }
+        }
+      });
+  }, []);
+
+  // BUG:BZ-088 - Load insights data; skeleton shows 3 cards but real data has 2 columns
+  useEffect(() => {
+    setInsightsLoading(true);
+    const timer = setTimeout(() => {
+      setInsightsData([
+        { title: 'Sprint Velocity', value: '24 pts', change: '+3 from last sprint' },
+        { title: 'Bug Resolution Rate', value: '87%', change: '+5% this week' },
+        { title: 'Team Utilization', value: '78%', change: '-2% this week' },
+        { title: 'Avg. Cycle Time', value: '3.2 days', change: '-0.4 days' },
+      ]);
+      setInsightsLoading(false);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
   const activeProjects = projects.filter((p) => p.status === 'active');
   const totalTasks = projects.reduce((sum, p) => sum + p.taskCount, 0);
   const completedTasks = projects.reduce((sum, p) => sum + p.completedTaskCount, 0);
+
+  // BUG:BZ-053 - Summary card count includes soft-deleted/archived projects
+  // The summary endpoint counts all non-permanently-deleted projects,
+  // while the list endpoint properly filters by status
+  const activeProjectSummaryCount = projects.filter(
+    (p) => p.status !== 'completed'
+  ).length;
   const dueSoonProjects = projects.filter((p) => {
     if (!p.dueDate) return false;
     const dueDate = new Date(p.dueDate);
@@ -58,6 +169,31 @@ export function DashboardPage() {
     const diffDays = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     return diffDays >= 0 && diffDays <= 7;
   });
+
+  // BUG:BZ-055 - Percentage calculation uses wrong base
+  // Growth is computed as (new / old * 100) instead of ((new - old) / old * 100)
+  // e.g., going from 100 to 150 shows "150%" instead of "50%"
+  const previousCompletedTasks = useMemo(() => {
+    // Simulated "last period" completed task count — roughly 80% of current
+    return Math.max(1, Math.floor(completedTasks * 0.8));
+  }, [completedTasks]);
+  const taskCompletionGrowth = useMemo(() => {
+    if (previousCompletedTasks === 0) return 0;
+    // Wrong formula: new/old * 100 instead of (new-old)/old * 100
+    const growth = (completedTasks / previousCompletedTasks) * 100;
+    if (typeof window !== 'undefined') {
+      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+      if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-055')) {
+        window.__PERCEPTR_TEST_BUGS__.push({
+          bugId: 'BZ-055',
+          timestamp: Date.now(),
+          description: 'Percentage calculation uses wrong base (new/old*100 instead of (new-old)/old*100)',
+          page: 'Dashboard',
+        });
+      }
+    }
+    return Math.round(growth);
+  }, [completedTasks, previousCompletedTasks]);
 
   const recentActivity = notifications.slice(0, 5);
 
@@ -145,26 +281,48 @@ export function DashboardPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <SummaryCard
-          title="Active Projects"
-          value={activeProjects.length}
-          icon={
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-            </svg>
-          }
-          trend={{ value: 12, isPositive: true }}
-        />
-        <SummaryCard
-          title="Total Tasks"
-          value={`${completedTasks}/${totalTasks}`}
-          icon={
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
-          }
-          trend={{ value: 8, isPositive: true }}
-        />
+        {/* BUG:BZ-053 - Deleted items still counted in summary cards */}
+        <div data-bug-id="BZ-053">
+          <SummaryCard
+            title="Active Projects"
+            value={(() => {
+              // Summary count from aggregation query includes archived items
+              if (activeProjectSummaryCount !== activeProjects.length) {
+                if (typeof window !== 'undefined') {
+                  window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                  if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-053')) {
+                    window.__PERCEPTR_TEST_BUGS__.push({
+                      bugId: 'BZ-053',
+                      timestamp: Date.now(),
+                      description: 'Deleted items still counted in summary cards',
+                      page: 'Dashboard',
+                    });
+                  }
+                }
+              }
+              return activeProjectSummaryCount;
+            })()}
+            icon={
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+            }
+            trend={{ value: 12, isPositive: true }}
+          />
+        </div>
+        {/* BUG:BZ-055 - Percentage calculation uses wrong base */}
+        <div data-bug-id="BZ-055">
+          <SummaryCard
+            title="Total Tasks"
+            value={`${completedTasks}/${totalTasks}`}
+            icon={
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+            }
+            trend={{ value: taskCompletionGrowth, isPositive: true }}
+          />
+        </div>
         <SummaryCard
           title="Team Members"
           value={members.length}
@@ -275,6 +433,116 @@ export function DashboardPage() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* BUG:BZ-088 - Skeleton loader doesn't match real layout */}
+      {/* Skeleton shows 3 cards per row, real content loads as 2 cards per row */}
+      <div data-bug-id="BZ-088" className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Performance Insights</h2>
+        {insightsLoading ? (
+          <div className="grid grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-2" />
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-1" />
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          (() => {
+            if (typeof window !== 'undefined') {
+              window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+              if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-088')) {
+                window.__PERCEPTR_TEST_BUGS__.push({
+                  bugId: 'BZ-088',
+                  timestamp: Date.now(),
+                  description: 'Skeleton loader layout (3 cols) does not match real content layout (2 cols)',
+                  page: 'Dashboard',
+                });
+              }
+            }
+            return (
+              <div className="grid grid-cols-2 gap-4">
+                {insightsData.map((insight, i) => (
+                  <div key={i} className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{insight.title}</p>
+                    <p className="text-xl font-semibold text-gray-900 dark:text-white mt-1">{insight.value}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{insight.change}</p>
+                  </div>
+                ))}
+              </div>
+            );
+          })()
+        )}
+      </div>
+
+      {/* BUG:BZ-086 - Loading spinner never disappears */}
+      <div data-bug-id="BZ-086" className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Team Activity</h2>
+        {teamActivityLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin h-6 w-6 border-4 border-blue-600 border-t-transparent rounded-full" />
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {teamActivity.map((item) => (
+              <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700/50 last:border-0">
+                <div>
+                  <span className="font-medium text-gray-900 dark:text-white">{item.memberName}</span>
+                  <span className="text-gray-500 dark:text-gray-400"> {item.action} in </span>
+                  <span className="text-blue-600 dark:text-blue-400">{item.project}</span>
+                </div>
+                <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap ml-4">
+                  {formatTime(item.timestamp)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* BUG:BZ-087 - Error state not shown on API failure */}
+      <div data-bug-id="BZ-087" className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Sprint Overview</h2>
+        {statsLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin h-6 w-6 border-4 border-blue-600 border-t-transparent rounded-full" />
+          </div>
+        ) : statsError ? (
+          <div className="text-center py-8">
+            <p className="text-red-600">{statsError}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 text-sm text-blue-600 hover:underline"
+            >
+              Retry
+            </button>
+          </div>
+        ) : dashboardStats ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{dashboardStats.avgCompletionTime}d</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Avg. Completion</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{dashboardStats.activeSprintItems}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Active Items</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-red-600">{dashboardStats.blockedItems}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Blocked</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-orange-600">{dashboardStats.upcomingDeadlines}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Upcoming Deadlines</p>
+            </div>
+          </div>
+        ) : (
+          /* BZ-087: When API fails, error state is never set, so this empty div renders
+             instead of an error message with a retry button */
+          <div className="py-8" />
+        )}
       </div>
 
       {/* Budget Overview Table */}
