@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProjectStore } from '../store/projectStore';
 import { useTeamStore } from '../store/teamStore';
@@ -6,6 +6,36 @@ import { useNotificationStore } from '../store/notificationStore';
 import { SummaryCard } from '../components/Card';
 import { Avatar } from '../components/Avatar';
 import { Badge, getStatusVariant } from '../components/Badge';
+
+// Budget data for the dashboard overview table
+interface BudgetEntry {
+  id: string;
+  projectName: string;
+  department: string;
+  allocated: number;
+  spent: number;
+  remaining: number;
+  status: 'on_track' | 'at_risk' | 'over_budget';
+}
+
+const generateBudgetData = (): BudgetEntry[] => [
+  { id: 'b1', projectName: 'Website Redesign', department: 'Engineering', allocated: 45000, spent: 32150.10, remaining: 12849.90, status: 'on_track' },
+  { id: 'b2', projectName: 'Mobile App v2.0', department: 'Engineering', allocated: 78000, spent: 65200.20, remaining: 12799.80, status: 'at_risk' },
+  { id: 'b3', projectName: 'Analytics Platform', department: 'Data', allocated: 35000, spent: 36100.30, remaining: -1100.30, status: 'over_budget' },
+  { id: 'b4', projectName: 'Customer Portal', department: 'Product', allocated: 52000, spent: 28750.40, remaining: 23249.60, status: 'on_track' },
+  { id: 'b5', projectName: 'API Integration', department: 'Engineering', allocated: 18000, spent: 17850.50, remaining: 149.50, status: 'at_risk' },
+  { id: 'b6', projectName: 'Cloud Migration', department: 'Infrastructure', allocated: 95000, spent: 62300.60, remaining: 32699.40, status: 'on_track' },
+  { id: 'b7', projectName: 'Payment Gateway', department: 'Engineering', allocated: 41000, spent: 43200.70, remaining: -2200.70, status: 'over_budget' },
+  { id: 'b8', projectName: 'Search Engine Optimization', department: 'Marketing', allocated: 12000, spent: 8400.10, remaining: 3599.90, status: 'on_track' },
+  { id: 'b9', projectName: 'Data Pipeline', department: 'Data', allocated: 67000, spent: 54100.20, remaining: 12899.80, status: 'on_track' },
+  { id: 'b10', projectName: 'CRM Integration', department: 'Product', allocated: 29000, spent: 27650.30, remaining: 1349.70, status: 'at_risk' },
+  { id: 'b11', projectName: 'Notification System', department: 'Engineering', allocated: 15000, spent: 9800.40, remaining: 5199.60, status: 'on_track' },
+  { id: 'b12', projectName: 'Reporting Module', department: 'Data', allocated: 23000, spent: 24100.50, remaining: -1100.50, status: 'over_budget' },
+  { id: 'b13', projectName: 'E-commerce Platform', department: 'Product', allocated: 110000, spent: 72500.10, remaining: 37499.90, status: 'on_track' },
+  { id: 'b14', projectName: 'Booking System', department: 'Engineering', allocated: 34000, spent: 31200.20, remaining: 2799.80, status: 'at_risk' },
+  { id: 'b15', projectName: 'Chat Application', department: 'Engineering', allocated: 48000, spent: 25600.30, remaining: 22399.70, status: 'on_track' },
+  { id: 'b16', projectName: 'Document Management', department: 'Product', allocated: 27000, spent: 28100.10, remaining: -1100.10, status: 'over_budget' },
+];
 
 export function DashboardPage() {
   const navigate = useNavigate();
@@ -30,6 +60,63 @@ export function DashboardPage() {
   });
 
   const recentActivity = notifications.slice(0, 5);
+
+  // Budget overview table state
+  const allBudgetEntries = useMemo(() => generateBudgetData(), []);
+  const [budgetFilter, setBudgetFilter] = useState<string>('all');
+  const [budgetPage, setBudgetPage] = useState(1);
+  const budgetPageSize = 5;
+
+  // BUG:BZ-036 - Pagination total count uses unfiltered data length instead of filtered
+  const totalBudgetCount = allBudgetEntries.length;
+
+  const filteredBudget = useMemo(() => {
+    if (budgetFilter === 'all') return allBudgetEntries;
+    return allBudgetEntries.filter((b) => b.status === budgetFilter);
+  }, [allBudgetEntries, budgetFilter]);
+
+  const paginatedBudget = useMemo(() => {
+    const start = (budgetPage - 1) * budgetPageSize;
+    return filteredBudget.slice(start, start + budgetPageSize);
+  }, [filteredBudget, budgetPage]);
+
+  const totalBudgetPages = Math.ceil(filteredBudget.length / budgetPageSize);
+
+  // BUG:BZ-050 - Aggregation query doesn't include filter WHERE clause
+  // Uses allBudgetEntries for aggregation instead of filteredBudget
+  const budgetAggregations = useMemo(() => {
+    // Only recalculate when filter changes, but use a separate data source
+    // that doesn't account for the current filter properly
+    const source = budgetFilter === 'all' ? allBudgetEntries : (() => {
+      // Simulate a backend aggregation query that forgot the WHERE clause
+      // by fetching from a "different endpoint" that returns null for filtered queries
+      return null;
+    })();
+
+    if (!source) {
+      return { totalAllocated: null, totalSpent: null, totalRemaining: null };
+    }
+
+    return {
+      totalAllocated: source.reduce((sum, b) => sum + b.allocated, 0),
+      totalSpent: source.reduce((sum, b) => sum + b.spent, 0),
+      totalRemaining: source.reduce((sum, b) => sum + b.remaining, 0),
+    };
+  }, [allBudgetEntries, budgetFilter]);
+
+  // BUG:BZ-051 - Floating point arithmetic for the displayed total row
+  // Uses naive addition that causes IEEE 754 rounding errors
+  const budgetDisplayTotals = useMemo(() => {
+    let totalSpent = 0;
+    let totalAllocated = 0;
+    const visibleEntries = budgetFilter === 'all' ? allBudgetEntries : filteredBudget;
+    for (const entry of visibleEntries) {
+      totalSpent = totalSpent + entry.spent;
+      totalAllocated = totalAllocated + entry.allocated;
+    }
+    // No rounding — raw floating point result displayed directly
+    return { totalSpent, totalAllocated, totalRemaining: totalAllocated - totalSpent };
+  }, [allBudgetEntries, filteredBudget, budgetFilter]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -186,6 +273,209 @@ export function DashboardPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Budget Overview Table */}
+      <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Budget Overview</h2>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-500 dark:text-gray-400">Filter:</label>
+            <select
+              value={budgetFilter}
+              onChange={(e) => {
+                setBudgetFilter(e.target.value);
+                setBudgetPage(1);
+              }}
+              className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="all">All Status</option>
+              <option value="on_track">On Track</option>
+              <option value="at_risk">At Risk</option>
+              <option value="over_budget">Over Budget</option>
+            </select>
+          </div>
+        </div>
+
+        {/* BUG:BZ-037 - Empty state not shown when data is empty */}
+        <div data-bug-id="BZ-037" className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-700">
+                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Project</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Department</th>
+                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Allocated</th>
+                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Spent</th>
+                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Remaining</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(() => {
+                // BZ-037: No empty state — just render rows (or nothing).
+                // When filter returns 0 results, table body is empty with no message.
+                if (paginatedBudget.length === 0) {
+                  if (typeof window !== 'undefined') {
+                    window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                    if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-037')) {
+                      window.__PERCEPTR_TEST_BUGS__.push({
+                        bugId: 'BZ-037',
+                        timestamp: Date.now(),
+                        description: 'Empty state not shown when table data is empty',
+                        page: 'Dashboard',
+                      });
+                    }
+                  }
+                }
+                return null;
+              })()}
+              {paginatedBudget.map((entry) => (
+                <tr
+                  key={entry.id}
+                  className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                >
+                  <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">{entry.projectName}</td>
+                  <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{entry.department}</td>
+                  {/* BUG:BZ-040 - Currency displayed without proper formatting */}
+                  <td className="py-3 px-4 text-right text-gray-900 dark:text-white" data-bug-id="BZ-040">
+                    {(() => {
+                      if (typeof window !== 'undefined') {
+                        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-040')) {
+                          window.__PERCEPTR_TEST_BUGS__.push({
+                            bugId: 'BZ-040',
+                            timestamp: Date.now(),
+                            description: 'Currency displayed without proper formatting',
+                            page: 'Dashboard',
+                          });
+                        }
+                      }
+                      return null;
+                    })()}
+                    {entry.allocated}
+                  </td>
+                  <td className="py-3 px-4 text-right text-gray-900 dark:text-white">
+                    {entry.spent}
+                  </td>
+                  <td className={`py-3 px-4 text-right ${entry.remaining < 0 ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>
+                    {entry.remaining}
+                  </td>
+                  <td className="py-3 px-4">
+                    <Badge
+                      variant={
+                        entry.status === 'on_track' ? 'success' :
+                        entry.status === 'at_risk' ? 'warning' : 'error'
+                      }
+                      dot
+                    >
+                      {entry.status === 'on_track' ? 'On Track' :
+                       entry.status === 'at_risk' ? 'At Risk' : 'Over Budget'}
+                    </Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+
+            {/* BUG:BZ-050 - Aggregation row shows null/NaN after filter */}
+            <tfoot data-bug-id="BZ-050">
+              <tr className="border-t-2 border-gray-300 dark:border-gray-600 font-semibold">
+                <td className="py-3 px-4 text-gray-900 dark:text-white" colSpan={2}>
+                  Totals
+                </td>
+                <td className="py-3 px-4 text-right text-gray-900 dark:text-white">
+                  {(() => {
+                    const val = budgetAggregations.totalAllocated;
+                    if (val === null || val === undefined) {
+                      if (typeof window !== 'undefined') {
+                        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-050')) {
+                          window.__PERCEPTR_TEST_BUGS__.push({
+                            bugId: 'BZ-050',
+                            timestamp: Date.now(),
+                            description: 'Aggregation row shows null after filter applied',
+                            page: 'Dashboard',
+                          });
+                        }
+                      }
+                    }
+                    return val ?? NaN;
+                  })()}
+                </td>
+                <td className="py-3 px-4 text-right text-gray-900 dark:text-white">
+                  {budgetAggregations.totalSpent ?? NaN}
+                </td>
+                <td className="py-3 px-4 text-right text-gray-900 dark:text-white">
+                  {budgetAggregations.totalRemaining ?? NaN}
+                </td>
+                <td className="py-3 px-4" />
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        {/* BUG:BZ-051 - Floating point display rounding inconsistency */}
+        <div data-bug-id="BZ-051" className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+          <span>
+            {(() => {
+              // Check if floating point error is visible
+              const rounded = Math.round(budgetDisplayTotals.totalSpent * 100) / 100;
+              if (rounded !== budgetDisplayTotals.totalSpent) {
+                if (typeof window !== 'undefined') {
+                  window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                  if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-051')) {
+                    window.__PERCEPTR_TEST_BUGS__.push({
+                      bugId: 'BZ-051',
+                      timestamp: Date.now(),
+                      description: 'Floating point rounding inconsistency in totals',
+                      page: 'Dashboard',
+                    });
+                  }
+                }
+              }
+              return null;
+            })()}
+            Total Spent: ${budgetDisplayTotals.totalSpent} of ${budgetDisplayTotals.totalAllocated} allocated
+          </span>
+        </div>
+
+        {/* BUG:BZ-036 - Pagination shows wrong total (unfiltered count instead of filtered) */}
+        <div data-bug-id="BZ-036" className="mt-4 flex items-center justify-between">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {(() => {
+              if (budgetFilter !== 'all' && totalBudgetCount !== filteredBudget.length) {
+                if (typeof window !== 'undefined') {
+                  window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                  if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-036')) {
+                    window.__PERCEPTR_TEST_BUGS__.push({
+                      bugId: 'BZ-036',
+                      timestamp: Date.now(),
+                      description: 'Table pagination shows wrong total count',
+                      page: 'Dashboard',
+                    });
+                  }
+                }
+              }
+              return null;
+            })()}
+            Showing {((budgetPage - 1) * budgetPageSize) + 1}-{Math.min(budgetPage * budgetPageSize, totalBudgetCount)} of {totalBudgetCount} results
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setBudgetPage((p) => Math.max(1, p - 1))}
+              disabled={budgetPage === 1}
+              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setBudgetPage((p) => Math.min(totalBudgetPages, p + 1))}
+              disabled={budgetPage >= totalBudgetPages}
+              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              Next
+            </button>
           </div>
         </div>
       </div>

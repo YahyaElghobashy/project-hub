@@ -1,7 +1,20 @@
 {
-  "completed_chunks": [],
+  "completed_chunks": [
+    1
+  ],
   "failed_chunks": [],
-  "injected_bugs": [],
+  "injected_bugs": [
+    "BZ-056",
+    "BZ-001",
+    "BZ-008",
+    "BZ-003",
+    "BZ-002",
+    "BZ-036",
+    "BZ-037",
+    "BZ-040",
+    "BZ-050",
+    "BZ-051"
+  ],
   "started_at": "2026-02-10T01:20:01.017546",
-  "last_updated": "2026-02-10T01:20:01.017554"
+  "last_updated": "2026-02-10T01:23:59.044801"
 }
