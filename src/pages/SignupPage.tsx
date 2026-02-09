@@ -14,30 +14,92 @@ export function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
 
+  // BUG:BZ-001 - Submit button calls preventDefault but never actually submits the form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     if (!name || !email || !password || !confirmPassword) {
+      // BUG:BZ-002 - Form clears all fields on validation error instead of preserving them
+      setName('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
       setError('Please fill in all fields');
+
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-002')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-002',
+            timestamp: Date.now(),
+            description: 'Form clears all fields on validation error',
+            page: 'Signup'
+          });
+        }
+      }
+
       return;
     }
 
     if (password !== confirmPassword) {
+      // BUG:BZ-002 - Form clears all fields on validation error instead of preserving them
+      setName('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
       setError('Passwords do not match');
+
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-002')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-002',
+            timestamp: Date.now(),
+            description: 'Form clears all fields on validation error',
+            page: 'Signup'
+          });
+        }
+      }
+
       return;
     }
 
     if (password.length < 8) {
+      // BUG:BZ-002 - Form clears all fields on validation error instead of preserving them
+      setName('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
       setError('Password must be at least 8 characters');
+
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-002')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-002',
+            timestamp: Date.now(),
+            description: 'Form clears all fields on validation error',
+            page: 'Signup'
+          });
+        }
+      }
+
       return;
     }
 
-    try {
-      await signup(email, password, name);
-      navigate('/dashboard');
-    } catch {
-      setError('Failed to create account');
+    // BUG:BZ-001 - Handler runs validation but never calls signup() or navigates
+    // The function just returns after validation passes, giving no feedback
+    if (typeof window !== 'undefined') {
+      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+      if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-001')) {
+        window.__PERCEPTR_TEST_BUGS__.push({
+          bugId: 'BZ-001',
+          timestamp: Date.now(),
+          description: 'Submit button does nothing - signup never called',
+          page: 'Signup'
+        });
+      }
     }
   };
 
@@ -57,9 +119,10 @@ export function SignupPage() {
 
         {/* Form */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* BUG:BZ-001 - Submit handler never actually calls signup API */}
+          <form onSubmit={handleSubmit} className="space-y-4" data-bug-id="BZ-001">
             {error && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-lg">
+              <div data-bug-id="BZ-002" className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-lg">
                 {error}
               </div>
             )}

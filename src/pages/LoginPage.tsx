@@ -1,16 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 
+// BUG:BZ-003 - Overly aggressive sanitizer strips special characters from password
+function sanitizeInput(value: string): string {
+  // Intended to prevent XSS, but regex is too aggressive — strips valid password characters
+  return value.replace(/[^a-zA-Z0-9]/g, '');
+}
+
 export function LoginPage() {
   const navigate = useNavigate();
   const { login, isLoading } = useAuthStore();
+  const formRef = useRef<HTMLFormElement>(null);
+  const submitCountRef = useRef(0);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
+  // BUG:BZ-056 - Check localStorage for stale session on mount and auto-redirect
+  useEffect(() => {
+    const storedSession = localStorage.getItem('projecthub_session');
+    if (storedSession) {
+      try {
+        const session = JSON.parse(storedSession);
+        if (session.token) {
+          // BUG:BZ-056 - Auto-redirect to dashboard using stale token from localStorage
+          // The logout function doesn't clear this, so refreshing login page redirects back
+          if (typeof window !== 'undefined') {
+            window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+            if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-056')) {
+              window.__PERCEPTR_TEST_BUGS__.push({
+                bugId: 'BZ-056',
+                timestamp: Date.now(),
+                description: 'Logout does not clear localStorage - stale session auto-redirects',
+                page: 'Login'
+              });
+            }
+          }
+          navigate('/dashboard');
+        }
+      } catch {
+        // Invalid JSON in storage, ignore
+      }
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,13 +57,53 @@ export function LoginPage() {
       return;
     }
 
+    // BUG:BZ-008 - Track submission count to detect double submit
+    submitCountRef.current += 1;
+    const currentSubmit = submitCountRef.current;
+
     try {
       await login(email, password);
+      // Store session in localStorage (used by BZ-056 stale session check)
+      localStorage.setItem('projecthub_session', JSON.stringify({
+        token: 'auth_token_' + Date.now(),
+        email,
+      }));
       navigate('/dashboard');
     } catch {
       setError('Invalid email or password');
     }
+
+    // BUG:BZ-008 - Log duplicate submission if more than one submit fired
+    if (currentSubmit > 1) {
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-008')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-008',
+            timestamp: Date.now(),
+            description: 'Form submits twice on Enter key press',
+            page: 'Login'
+          });
+        }
+      }
+    }
   };
+
+  // BUG:BZ-008 - Separate keydown listener for Enter also triggers submit, causing duplicate submissions
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && formRef.current) {
+        // This fires in addition to the form's native onSubmit, causing a double submit
+        formRef.current.requestSubmit();
+      }
+    };
+
+    const form = formRef.current;
+    form?.addEventListener('keydown', handleKeyDown);
+    return () => {
+      form?.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
@@ -45,7 +121,8 @@ export function LoginPage() {
 
         {/* Form */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* BUG:BZ-008 - Form has both keydown Enter listener and onSubmit, causing double submissions */}
+          <form ref={formRef} onSubmit={handleSubmit} className="space-y-4" data-bug-id="BZ-008">
             {error && (
               <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-lg">
                 {error}
@@ -65,18 +142,40 @@ export function LoginPage() {
               }
             />
 
-            <Input
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              leftIcon={
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              }
-            />
+            {/* BUG:BZ-003 - Password field sanitizer strips special characters */}
+            <div data-bug-id="BZ-003">
+              <Input
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => {
+                  // BUG:BZ-003 - sanitizeInput strips @, !, #, $, etc. from passwords
+                  const sanitized = sanitizeInput(e.target.value);
+                  setPassword(sanitized);
+
+                  // Log when special characters are actually stripped
+                  if (sanitized !== e.target.value) {
+                    if (typeof window !== 'undefined') {
+                      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                      if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-003')) {
+                        window.__PERCEPTR_TEST_BUGS__.push({
+                          bugId: 'BZ-003',
+                          timestamp: Date.now(),
+                          description: 'Password field strips special characters via aggressive sanitizer',
+                          page: 'Login'
+                        });
+                      }
+                    }
+                  }
+                }}
+                leftIcon={
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                }
+              />
+            </div>
 
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2">

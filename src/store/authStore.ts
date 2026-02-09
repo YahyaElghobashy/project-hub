@@ -59,9 +59,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
+  // BUG:BZ-056 - Logout clears Zustand state but doesn't clear localStorage
+  // The projecthub_session key persists, causing auto-redirect on login page refresh
   logout: () => {
     fetch('/api/auth/logout', { method: 'POST' });
     set({ user: null, isAuthenticated: false });
+    // Missing: localStorage.removeItem('projecthub_session');
   },
 
   setUser: (user) => {
