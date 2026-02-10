@@ -16,6 +16,51 @@ export function Layout() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
+  // BUG:BZ-030 - Concurrent route transitions cause white screen
+  // Rapidly clicking between nav items increments a transition counter.
+  // When multiple transitions overlap (counter > 1), the component sets an error
+  // state that renders a blank fallback and never recovers.
+  const transitionCountRef = useRef(0);
+  const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [routeTransitionError, setRouteTransitionError] = useState(false);
+
+  useEffect(() => {
+    transitionCountRef.current += 1;
+    const currentCount = transitionCountRef.current;
+
+    // Clear previous transition timer
+    if (transitionTimerRef.current) {
+      clearTimeout(transitionTimerRef.current);
+    }
+
+    // If more than 2 rapid transitions overlap, trigger the white screen bug
+    if (currentCount > 2) {
+      setRouteTransitionError(true);
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-030')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-030',
+            timestamp: Date.now(),
+            description: 'Concurrent route transitions caused white screen - overlapping navigations triggered error state',
+            page: 'Navigation/Global'
+          });
+        }
+      }
+    }
+
+    // Reset the counter after transitions settle (300ms debounce)
+    transitionTimerRef.current = setTimeout(() => {
+      transitionCountRef.current = 0;
+    }, 300);
+
+    return () => {
+      if (transitionTimerRef.current) {
+        clearTimeout(transitionTimerRef.current);
+      }
+    };
+  }, [location.pathname]);
+
   // BUG:BZ-025 - Infinite redirect loop on expired session
   // Auth guard checks for expired token and redirects to /login, but login page
   // detects the stale token and redirects back, creating an infinite loop
@@ -115,6 +160,115 @@ export function Layout() {
     };
   }, [pushFilterState]);
 
+  // BUG:BZ-031 - URL state and app state diverge after popstate
+  // Stores the filter state when navigating away but doesn't restore it from
+  // URL params when the user presses back. The popstate listener updates the URL
+  // but fails to sync back to the app's filter state, so UI shows defaults
+  // while URL still has ?status=active etc.
+  const [appFilterState, setAppFilterState] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const handlePopState = () => {
+      // This handler intentionally does NOT sync URL params back to appFilterState.
+      // The URL will have params like ?status=active but appFilterState stays empty,
+      // causing the UI to show "All" while the URL shows filtered state.
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.toString()) {
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-031')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-031',
+              timestamp: Date.now(),
+              description: 'URL state and app state diverged after popstate - URL has params but UI shows defaults',
+              page: 'Navigation/Global'
+            });
+          }
+        }
+      }
+      // Bug: should call setAppFilterState with parsed URL params, but doesn't
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Expose setAppFilterState so pages can update filters
+  useEffect(() => {
+    (window as unknown as Record<string, unknown>).__setAppFilterState = setAppFilterState;
+    return () => {
+      delete (window as unknown as Record<string, unknown>).__setAppFilterState;
+    };
+  }, []);
+
+  // BUG:BZ-032 - Analytics pageview fires twice on route change
+  // The analytics tracker is wired to both the React Router location change
+  // AND a popstate listener, causing double pageview events on every navigation
+  useEffect(() => {
+    // First fire: React Router location change triggers this effect
+    const trackPageview = (url: string) => {
+      const analyticsEvent = {
+        type: 'pageview',
+        url,
+        timestamp: Date.now()
+      };
+      // Push to a global analytics queue (simulating a real analytics SDK)
+      (window as unknown as Record<string, unknown[]>).__ANALYTICS_QUEUE__ =
+        (window as unknown as Record<string, unknown[]>).__ANALYTICS_QUEUE__ || [];
+      (window as unknown as Record<string, unknown[]>).__ANALYTICS_QUEUE__.push(analyticsEvent);
+    };
+
+    trackPageview(location.pathname);
+
+    // Second fire: Also attach a popstate listener that fires on the same navigation
+    // This causes double-counting of pageviews (~40% analytics inflation)
+    const handlePopStateAnalytics = () => {
+      trackPageview(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopStateAnalytics);
+
+    if (typeof window !== 'undefined') {
+      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+      if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-032')) {
+        window.__PERCEPTR_TEST_BUGS__.push({
+          bugId: 'BZ-032',
+          timestamp: Date.now(),
+          description: 'Analytics pageview fires twice per route change - location effect + popstate listener',
+          page: 'Navigation/Global'
+        });
+      }
+    }
+
+    return () => {
+      window.removeEventListener('popstate', handlePopStateAnalytics);
+    };
+  }, [location.pathname]);
+
+  // BUG:BZ-033 - Scroll position not restored on back navigation
+  // The main content area scrolls to top on every route change, but never saves
+  // or restores the previous scroll position. Pressing back after scrolling
+  // down a long page returns the user to the top.
+  const mainContentRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    // Always scroll to top on route change — never preserves or restores position
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTop = 0;
+    }
+
+    if (typeof window !== 'undefined') {
+      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+      if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-033')) {
+        window.__PERCEPTR_TEST_BUGS__.push({
+          bugId: 'BZ-033',
+          timestamp: Date.now(),
+          description: 'Scroll position not restored on back navigation - always resets to top',
+          page: 'Navigation/Global'
+        });
+      }
+    }
+  }, [location.pathname]);
+
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -136,10 +290,45 @@ export function Layout() {
     }
   };
 
+  // BUG:BZ-034 - Dynamic route segments not decoded
+  // When the URL has encoded characters like %20, they're passed through as-is
+  // to the page title context. Missing decodeURIComponent means "My%20Project"
+  // is displayed instead of "My Project"
+  const routeSegments = location.pathname.split('/').filter(Boolean);
+  const currentPageTitle = routeSegments[routeSegments.length - 1] || '';
+  // Bug: Should call decodeURIComponent(currentPageTitle) but doesn't
+  // This raw title is exposed for child components to use for page headers
+
+  useEffect(() => {
+    (window as unknown as Record<string, unknown>).__currentPageTitle = currentPageTitle;
+    if (currentPageTitle !== decodeURIComponent(currentPageTitle)) {
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-034')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-034',
+            timestamp: Date.now(),
+            description: 'Dynamic route segments not decoded - URL-encoded characters shown raw in titles',
+            page: 'Navigation/Global'
+          });
+        }
+      }
+    }
+  }, [currentPageTitle]);
+
   if (!user) {
     return (
       <div data-bug-id="BZ-025" className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // BUG:BZ-030 - White screen on concurrent route transitions
+  if (routeTransitionError) {
+    return (
+      <div data-bug-id="BZ-030" className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin h-8 w-8 border-4 border-gray-300 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -159,10 +348,23 @@ export function Layout() {
         />
 
         {/* BUG:BZ-024 - Query params stripped on navigation */}
-        <main className="flex-1 overflow-y-auto" data-bug-id="BZ-024">
+        {/* BUG:BZ-033 - Scroll position not restored on back navigation */}
+        <main ref={mainContentRef} className="flex-1 overflow-y-auto" data-bug-id="BZ-024">
           {/* BUG:BZ-029 - Filter changes pollute browser history */}
           <div data-bug-id="BZ-029" className="h-full">
-            <Outlet />
+            {/* BUG:BZ-031 - URL/app state diverge after popstate */}
+            <div data-bug-id="BZ-031">
+              {/* BUG:BZ-032 - Analytics pageview fires twice */}
+              <div data-bug-id="BZ-032">
+                {/* BUG:BZ-034 - Dynamic route segments not decoded */}
+                <div data-bug-id="BZ-034">
+                  {/* BUG:BZ-033 - Scroll position reset on every navigation */}
+                  <div data-bug-id="BZ-033">
+                    <Outlet context={{ appFilterState, pageTitle: currentPageTitle }} />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </main>
       </div>
