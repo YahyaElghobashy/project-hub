@@ -17,6 +17,13 @@ const loginAttemptTracker: Record<string, { successCount: number; windowStart: n
 const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute window
 const RATE_LIMIT_MAX_SUCCESSES = 5; // Limit after 5 successful logins in window
 
+// BUG:BZ-064 - CSRF token management
+// The current CSRF token rotates when the session refreshes, but the page's
+// stored token doesn't get updated, causing a mismatch on form submission
+let currentCsrfToken = 'csrf_' + Math.random().toString(36).substring(2, 15);
+let csrfTokenGeneratedAt = Date.now();
+const CSRF_TOKEN_LIFETIME_MS = 15000; // Token becomes stale after 15 seconds
+
 // Helper to generate IDs
 const generateId = (): string => {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -24,6 +31,22 @@ const generateId = (): string => {
 
 export const handlers = [
   // ============ AUTH ENDPOINTS ============
+
+  // BUG:BZ-064 - CSRF token endpoint — returns current CSRF token
+  http.get('/api/auth/csrf-token', async () => {
+    await delay(50);
+    return HttpResponse.json({ token: currentCsrfToken });
+  }),
+
+  // BUG:BZ-064 - Session refresh endpoint — rotates the CSRF token
+  // but the client doesn't re-fetch it, causing stale token on next form submit
+  http.post('/api/auth/refresh-session', async () => {
+    await delay(100);
+    // Rotate CSRF token on session refresh
+    currentCsrfToken = 'csrf_' + Math.random().toString(36).substring(2, 15);
+    csrfTokenGeneratedAt = Date.now();
+    return HttpResponse.json({ success: true, expiresIn: CSRF_TOKEN_LIFETIME_MS });
+  }),
 
   // BUG:BZ-070 - Rate limiter only counts successful logins, not failed attempts
   http.post('/api/auth/login', async ({ request }) => {
@@ -131,6 +154,17 @@ export const handlers = [
 
   http.patch('/api/users/:id', async ({ params, request }) => {
     await delay(200);
+
+    // BUG:BZ-064 - Validate CSRF token on profile update
+    // If the token is stale (was generated before last session refresh), return 403
+    const csrfHeader = request.headers.get('X-CSRF-Token');
+    if (csrfHeader && csrfHeader !== currentCsrfToken) {
+      return HttpResponse.json(
+        { error: 'CSRF token mismatch', code: 'CSRF_INVALID' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json() as Partial<User>;
     const index = mockUsers.findIndex(u => u.id === params.id);
 

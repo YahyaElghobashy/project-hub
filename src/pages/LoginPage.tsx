@@ -12,7 +12,7 @@ function sanitizeInput(value: string): string {
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuthStore();
+  const { login, loginWithSSO, isLoading } = useAuthStore();
   const formRef = useRef<HTMLFormElement>(null);
   const submitCountRef = useRef(0);
 
@@ -41,12 +41,40 @@ export function LoginPage() {
             }
           }
           navigate('/dashboard');
+          return;
         }
       } catch {
         // Invalid JSON in storage, ignore
       }
     }
-  }, [navigate]);
+
+    // BUG:BZ-065 - Check for persisted SSO session and auto-re-authenticate
+    // After SSO logout, the local session is cleared but the SSO cookie remains,
+    // so reopening the app automatically logs the user back in
+    const ssoSession = localStorage.getItem('projecthub_sso_session');
+    if (ssoSession) {
+      try {
+        const session = JSON.parse(ssoSession);
+        if (session.token && session.provider) {
+          if (typeof window !== 'undefined') {
+            window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+            if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-065')) {
+              window.__PERCEPTR_TEST_BUGS__.push({
+                bugId: 'BZ-065',
+                timestamp: Date.now(),
+                description: 'SSO user auto-re-authenticated after logout — IdP session cookie was not cleared',
+                page: 'Remaining Auth'
+              });
+            }
+          }
+          // Auto-re-authenticate using the persisted SSO cookie
+          loginWithSSO(session.provider).then(() => navigate('/dashboard'));
+        }
+      } catch {
+        // Invalid SSO session, ignore
+      }
+    }
+  }, [navigate, loginWithSSO]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -205,8 +233,24 @@ export function LoginPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" type="button">
+          {/* BUG:BZ-065 - SSO login buttons — store SSO session that persists after logout */}
+          <div className="grid grid-cols-2 gap-3" data-bug-id="BZ-065">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={async () => {
+                try {
+                  await loginWithSSO('google');
+                  localStorage.setItem('projecthub_session', JSON.stringify({
+                    token: 'sso_google_' + Date.now(),
+                    email: 'sso-google@example.com',
+                  }));
+                  navigate('/dashboard');
+                } catch {
+                  setError('Google sign-in failed');
+                }
+              }}
+            >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
@@ -227,7 +271,22 @@ export function LoginPage() {
               </svg>
               Google
             </Button>
-            <Button variant="outline" type="button">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={async () => {
+                try {
+                  await loginWithSSO('github');
+                  localStorage.setItem('projecthub_session', JSON.stringify({
+                    token: 'sso_github_' + Date.now(),
+                    email: 'sso-github@example.com',
+                  }));
+                  navigate('/dashboard');
+                } catch {
+                  setError('GitHub sign-in failed');
+                }
+              }}
+            >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path
                   fillRule="evenodd"

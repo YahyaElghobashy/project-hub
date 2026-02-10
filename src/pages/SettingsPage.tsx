@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useNotificationStore } from '../store/notificationStore';
 import { Button } from '../components/Button';
@@ -38,11 +38,81 @@ export function SettingsPage() {
   const [referralCode, setReferralCode] = useState('');
   const [budgetInput, setBudgetInput] = useState('');
   const [parsedBudget, setParsedBudget] = useState<number | null>(null);
+  const [csrfToken, setCsrfToken] = useState('');
+  const [saveError, setSaveError] = useState('');
+  const [teamActivity, setTeamActivity] = useState<{ user: string; action: string; time: string }[]>([]);
+  const [activityLoaded, setActivityLoaded] = useState(false);
+  const scrolledToHash = useRef(false);
 
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains('dark');
     setIsDark(isDarkMode);
   }, []);
+
+  // BUG:BZ-064 - Fetch CSRF token on mount
+  useEffect(() => {
+    fetch('/api/auth/csrf-token')
+      .then(res => res.json())
+      .then(data => setCsrfToken(data.token))
+      .catch(() => {});
+  }, []);
+
+  // BUG:BZ-064 - Auto-refresh session after idle period
+  // This rotates the server-side CSRF token but does NOT re-fetch it for the client,
+  // so the client's stored csrfToken becomes stale
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      fetch('/api/auth/refresh-session', { method: 'POST' })
+        .catch(() => {});
+      // NOTE: Does NOT call setCsrfToken — token is now stale
+    }, 15000); // Refreshes every 15 seconds
+    return () => clearInterval(refreshInterval);
+  }, []);
+
+  // BUG:BZ-026 - Hash fragment navigation scrolls to wrong position
+  // Scrolls to anchor BEFORE dynamic content above finishes loading,
+  // so the target section shifts down after the scroll completes
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && !scrolledToHash.current) {
+      scrolledToHash.current = true;
+      // Scroll immediately — before teamActivity loads and pushes content down
+      const targetEl = document.querySelector(hash);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: 'smooth' });
+
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-026')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-026',
+              timestamp: Date.now(),
+              description: 'Hash fragment scroll executes before dynamic content loads — lands on wrong section',
+              page: 'Remaining Auth'
+            });
+          }
+        }
+      }
+    }
+  }, []);
+
+  // Dynamic content that loads AFTER the hash scroll, pushing sections below it down
+  useEffect(() => {
+    if (activeTab === 'profile') {
+      const timer = setTimeout(() => {
+        setTeamActivity([
+          { user: 'Sarah Chen', action: 'updated profile settings', time: '2 min ago' },
+          { user: 'Marcus Johnson', action: 'changed notification preferences', time: '15 min ago' },
+          { user: 'Aiko Tanaka', action: 'connected Slack integration', time: '1 hour ago' },
+          { user: 'Diego Rivera', action: 'changed team permissions', time: '2 hours ago' },
+          { user: 'Emma Wilson', action: 'updated billing information', time: '3 hours ago' },
+          { user: 'Liam Patel', action: 'reset API token', time: '5 hours ago' },
+        ]);
+        setActivityLoaded(true);
+      }, 800); // Loads after scroll has already happened
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab]);
 
   // BUG:BZ-017 - Form data encoding mangles Unicode names (diacritics, CJK, etc.)
   // Uses encodeURIComponent + unescape to "sanitize" — this converts UTF-8 to Latin-1, creating mojibake
@@ -56,6 +126,8 @@ export function SettingsPage() {
     }
   };
 
+  // BUG:BZ-064 - CSRF token mismatch after idle — form submission fails with 403
+  // but the error handler shows "Network Error" instead of the real issue
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
@@ -78,7 +150,39 @@ export function SettingsPage() {
         }
       }
 
-      await updateProfile({ name: encodedName, email });
+      // BUG:BZ-064 - Include the (potentially stale) CSRF token in the request
+      const response = await fetch(`/api/users/${user?.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+        },
+        body: JSON.stringify({ name: encodedName, email }),
+      });
+
+      if (!response.ok) {
+        // BUG:BZ-064 - Error handler shows "Network Error" for all failures,
+        // masking the real 403 CSRF mismatch error
+        throw new Error('Network Error');
+      }
+
+      const updatedUser = await response.json();
+      useAuthStore.getState().setUser(updatedUser);
+    } catch (err: any) {
+      // BUG:BZ-064 - Always shows misleading "Network Error" instead of the actual
+      // CSRF token mismatch error, making it very hard to debug
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-064')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-064',
+            timestamp: Date.now(),
+            description: 'CSRF token mismatch after session refresh — 403 error shown as Network Error',
+            page: 'Remaining Auth'
+          });
+        }
+      }
+      setSaveError(err.message || 'Network Error');
     } finally {
       setIsSaving(false);
     }
@@ -266,7 +370,69 @@ export function SettingsPage() {
           {/* Profile Tab */}
           {activeTab === 'profile' && (
             <div className="space-y-6">
+              {/* BUG:BZ-026 - Quick section links using hash fragments */}
+              <div data-bug-id="BZ-026" className="flex gap-3 flex-wrap">
+                <a
+                  href="#profile-info"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.querySelector('#profile-info')?.scrollIntoView({ behavior: 'smooth' });
+
+                    if (typeof window !== 'undefined') {
+                      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                      if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-026')) {
+                        window.__PERCEPTR_TEST_BUGS__.push({
+                          bugId: 'BZ-026',
+                          timestamp: Date.now(),
+                          description: 'Hash fragment scroll executes before dynamic content loads — lands on wrong section',
+                          page: 'Remaining Auth'
+                        });
+                      }
+                    }
+                  }}
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  Profile Info
+                </a>
+                <a
+                  href="#billing"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    // BUG:BZ-026 - Scrolls to #billing immediately, but the team activity section
+                    // above may still be loading, which will push #billing further down the page
+                    document.querySelector('#billing')?.scrollIntoView({ behavior: 'smooth' });
+
+                    if (typeof window !== 'undefined') {
+                      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                      if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-026')) {
+                        window.__PERCEPTR_TEST_BUGS__.push({
+                          bugId: 'BZ-026',
+                          timestamp: Date.now(),
+                          description: 'Hash fragment scroll executes before dynamic content loads — lands on wrong section',
+                          page: 'Remaining Auth'
+                        });
+                      }
+                    }
+                  }}
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  Billing & Referral
+                </a>
+                <a
+                  href="#danger-zone"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.querySelector('#danger-zone')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  Danger Zone
+                </a>
+              </div>
+
               <Card>
+                <div id="profile-info">
+                </div>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
                   Profile Information
                 </h2>
@@ -382,16 +548,50 @@ export function SettingsPage() {
                     </p>
                   </div>
 
-                  <div className="pt-4">
-                    <Button onClick={handleSaveProfile} isLoading={isSaving}>
+                  {/* BUG:BZ-064 - CSRF token mismatch after session refresh shows misleading error */}
+                  <div className="pt-4" data-bug-id="BZ-064">
+                    {saveError && (
+                      <div className="mb-3 p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-lg">
+                        {saveError}
+                      </div>
+                    )}
+                    <Button onClick={() => { setSaveError(''); handleSaveProfile(); }} isLoading={isSaving}>
                       Save Changes
                     </Button>
                   </div>
                 </div>
               </Card>
 
+              {/* Team Activity — loads dynamically after delay, pushing content below it */}
+              {activityLoaded && teamActivity.length > 0 && (
+                <Card>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    Recent Team Activity
+                  </h2>
+                  <div className="space-y-3">
+                    {teamActivity.map((activity, i) => (
+                      <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xs font-medium text-blue-600 dark:text-blue-400">
+                            {activity.user.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-900 dark:text-white">
+                              <span className="font-medium">{activity.user}</span>{' '}
+                              {activity.action}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{activity.time}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
               {/* Billing & Referral Section */}
               <Card>
+                <div id="billing"></div>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
                   Billing & Referral
                 </h2>
@@ -488,6 +688,37 @@ export function SettingsPage() {
                       }}
                     >
                       Save Billing Settings
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Danger Zone — target for hash fragment scroll */}
+              <Card>
+                <div id="danger-zone"></div>
+                <h2 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
+                  Danger Zone
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Irreversible and destructive actions for your account.
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 border border-red-200 dark:border-red-800 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">Delete Account</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Permanently delete your account and all data</p>
+                    </div>
+                    <Button variant="outline" size="sm" className="text-red-600 border-red-300 hover:bg-red-50">
+                      Delete Account
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between p-3 border border-red-200 dark:border-red-800 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">Export Data</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Download all your data before deletion</p>
+                    </div>
+                    <Button variant="outline" size="sm">
+                      Export
                     </Button>
                   </div>
                 </div>
