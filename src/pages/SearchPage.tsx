@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '../components/Input';
 import { Avatar } from '../components/Avatar';
@@ -9,6 +9,14 @@ interface SearchResults {
   type: string;
   items: (Project | Task | User)[];
 }
+
+// Keyboard shortcut mappings for quick navigation
+const KEYBOARD_SHORTCUTS: Record<string, string> = {
+  'd': '/dashboard',
+  'p': '/projects',
+  't': '/team',
+  's': '/settings',
+};
 
 export function SearchPage() {
   const navigate = useNavigate();
@@ -29,23 +37,73 @@ export function SearchPage() {
     }
   }, []);
 
+  // BUG:BZ-110 - Keyboard shortcut fires in input fields without checking activeElement
+  useEffect(() => {
+    const handleKeyboardShortcut = (e: KeyboardEvent) => {
+      // Only handle single character shortcuts, skip if modifier keys are pressed
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const route = KEYBOARD_SHORTCUTS[e.key.toLowerCase()];
+      if (route) {
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-110')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-110',
+              timestamp: Date.now(),
+              description: 'Keyboard shortcut fires in input fields',
+              page: 'Search'
+            });
+          }
+        }
+        navigate(route);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyboardShortcut);
+    return () => window.removeEventListener('keydown', handleKeyboardShortcut);
+  }, [navigate]);
+
+  // BUG:BZ-010 - Search debounce drops last character from query
+  const searchQuery = useRef(query);
+  searchQuery.current = query;
+
   useEffect(() => {
     const searchDebounce = setTimeout(async () => {
-      if (query.trim().length < 2) {
+      // Use a snapshot of the query captured slightly before the debounce fires
+      // This can cause the last keystroke to be trimmed from the search
+      const currentQuery = searchQuery.current;
+      const searchTerm = currentQuery.length > 0 ? currentQuery.slice(0, -1) : currentQuery;
+
+      if (searchTerm.trim().length < 2) {
         setResults([]);
         return;
+      }
+
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-010')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-010',
+            timestamp: Date.now(),
+            description: 'Search debounce drops last character',
+            page: 'Search'
+          });
+        }
       }
 
       setIsLoading(true);
       try {
         const url = new URL('/api/search', window.location.origin);
-        url.searchParams.set('q', query);
+        url.searchParams.set('q', searchTerm);
         if (typeFilter) {
           url.searchParams.set('type', typeFilter);
         }
 
         const response = await fetch(url.toString());
         const data = await response.json();
+
+        // BUG:BZ-094 - Race condition: no request cancellation, slow response overwrites fast one
         setResults(data);
       } catch (error) {
         console.error('Search error:', error);
@@ -56,6 +114,45 @@ export function SearchPage() {
 
     return () => clearTimeout(searchDebounce);
   }, [query, typeFilter]);
+
+  // BUG:BZ-094 - Race condition: stale response from slow request overwrites newer fast response
+  const handleFilterChange = useCallback(async (newFilter: string) => {
+    setTypeFilter(newFilter);
+
+    // Immediately fire a search with the new filter to give fast results
+    // but don't cancel the debounced search — both can resolve and the older
+    // debounced result may overwrite this one
+    if (query.trim().length >= 2) {
+      try {
+        const url = new URL('/api/search', window.location.origin);
+        const searchTerm = query.length > 0 ? query.slice(0, -1) : query;
+        url.searchParams.set('q', searchTerm);
+        if (newFilter) {
+          url.searchParams.set('type', newFilter);
+        }
+
+        const response = await fetch(url.toString());
+        const data = await response.json();
+
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-094')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-094',
+              timestamp: Date.now(),
+              description: 'Race condition: slow request overwrites fast one',
+              page: 'Search'
+            });
+          }
+        }
+
+        // No staleness check — this may overwrite results from a newer request
+        setResults(data);
+      } catch (error) {
+        console.error('Search error:', error);
+      }
+    }
+  }, [query]);
 
   const handleSelect = (type: string, item: Project | Task | User) => {
     // Save to recent searches
@@ -103,7 +200,8 @@ export function SearchPage() {
       {/* Search Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Search</h1>
-        <div className="flex gap-4">
+        {/* BUG:BZ-010 - Debounce trims last character from search query */}
+        <div className="flex gap-4" data-bug-id="BZ-010">
           <div className="flex-1">
             <Input
               ref={inputRef}
@@ -117,9 +215,11 @@ export function SearchPage() {
               }
             />
           </div>
+          {/* BUG:BZ-094 - Filter change fires parallel request without cancelling debounced one */}
           <select
+            data-bug-id="BZ-094"
             value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
+            onChange={(e) => handleFilterChange(e.target.value)}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Types</option>
@@ -128,6 +228,18 @@ export function SearchPage() {
             <option value="users">Users</option>
           </select>
         </div>
+      </div>
+
+      {/* Keyboard shortcut hint */}
+      {/* BUG:BZ-110 - Global shortcuts fire even when typing in input fields */}
+      <div className="mb-4 flex gap-2 text-xs text-gray-400 dark:text-gray-500" data-bug-id="BZ-110">
+        <span>Shortcuts:</span>
+        <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">D</kbd>
+        <span>Dashboard</span>
+        <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">P</kbd>
+        <span>Projects</span>
+        <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">T</kbd>
+        <span>Team</span>
       </div>
 
       {/* Recent Searches */}
