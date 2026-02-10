@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProjectStore } from '../store/projectStore';
 import { useTeamStore } from '../store/teamStore';
@@ -137,6 +137,45 @@ export function DashboardPage() {
       });
   }, []);
 
+  // BUG:BZ-119 - N+1 API Query on Dashboard
+  // After loading the project list, fetches each project's details individually
+  // instead of using a batch endpoint. Results in N+1 API calls on page load.
+  const [projectDetails, setProjectDetails] = useState<Record<string, unknown>>({});
+  const projectDetailsFetchedRef = useRef(false);
+
+  useEffect(() => {
+    if (projects.length > 0 && !projectsLoading && !projectDetailsFetchedRef.current) {
+      projectDetailsFetchedRef.current = true;
+      // Fetch each project's details individually — classic N+1 pattern
+      const fetchAllDetails = async () => {
+        const details: Record<string, unknown> = {};
+        for (const project of projects) {
+          try {
+            const res = await fetch(`/api/projects/${project.id}`);
+            if (res.ok) {
+              details[project.id] = await res.json();
+            }
+          } catch {
+            // Silently skip failed detail fetches
+          }
+        }
+        setProjectDetails(details);
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-119')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-119',
+              timestamp: Date.now(),
+              description: `N+1 API query: 1 list call + ${projects.length} individual detail calls`,
+              page: 'Dashboard',
+            });
+          }
+        }
+      };
+      fetchAllDetails();
+    }
+  }, [projects, projectsLoading]);
+
   // BUG:BZ-088 - Load insights data; skeleton shows 3 cards but real data has 2 columns
   useEffect(() => {
     setInsightsLoading(true);
@@ -196,6 +235,44 @@ export function DashboardPage() {
   }, [completedTasks, previousCompletedTasks]);
 
   const recentActivity = notifications.slice(0, 5);
+
+  // BUG:BZ-120 - Subscribing to the entire notification store (root level)
+  // causes the heavy budget table to re-render on every store change,
+  // including unrelated chat/notification updates
+  const notificationStore = useNotificationStore();
+  const renderCountRef = useRef(0);
+  renderCountRef.current++;
+
+  // Simulate periodic "live" notification updates (like incoming chat messages)
+  // that trigger store changes and cascade re-renders to the budget table
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Touch the notification store to simulate incoming chat/notification events
+      // This causes a store update that re-renders all subscribers, including the budget table
+      useNotificationStore.setState((state) => ({
+        ...state,
+        _lastPing: Date.now(),
+      } as typeof state));
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Log BZ-120 when the budget table re-renders due to unrelated store changes
+  const logBZ120 = useCallback(() => {
+    if (renderCountRef.current > 2) {
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-120')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-120',
+            timestamp: Date.now(),
+            description: `Store causes cascading re-renders: budget table rendered ${renderCountRef.current} times due to unrelated store changes`,
+            page: 'Dashboard',
+          });
+        }
+      }
+    }
+  }, []);
 
   // Budget overview table state
   const allBudgetEntries = useMemo(() => generateBudgetData(), []);
@@ -345,8 +422,9 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* BUG:BZ-119 - N+1 API query: fetches each project detail individually */}
         {/* Project Progress */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div data-bug-id="BZ-119" className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Project Progress</h2>
             <button
@@ -545,8 +623,12 @@ export function DashboardPage() {
         )}
       </div>
 
+      {/* BUG:BZ-120 - Store causes cascading re-renders on unrelated state changes */}
       {/* Budget Overview Table */}
-      <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+      <div data-bug-id="BZ-120" className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        {logBZ120()}
+        {/* Hidden span that forces dependency on notification store, causing re-renders */}
+        <span className="hidden" aria-hidden="true" data-notification-count={notificationStore.unreadCount} data-render-count={renderCountRef.current} />
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Budget Overview</h2>
           <div className="flex items-center gap-2">
