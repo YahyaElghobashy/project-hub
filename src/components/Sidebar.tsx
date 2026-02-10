@@ -151,7 +151,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }: SidebarPro
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-zinc-200 dark:border-zinc-700">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
               <Zap className="w-5 h-5 text-white" />
             </div>
             {!isCollapsed && (
@@ -196,7 +196,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }: SidebarPro
                   ${isCollapsed ? 'justify-center' : ''}
                   ${
                     isItemActive
-                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                      ? 'bg-gradient-to-r from-blue-50 to-indigo-50/30 dark:from-blue-900/20 dark:to-indigo-900/10 text-blue-600 dark:text-blue-400'
                       : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700'
                   }
                 `}

@@ -70,7 +70,7 @@ export function SummaryCard({ title, value, icon, trend, className = '' }: Summa
             </p>
           )}
         </div>
-        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400">
+        <div className="p-3 bg-gradient-to-br from-blue-50 to-indigo-50/50 dark:from-blue-900/20 dark:to-indigo-900/10 rounded-lg text-blue-600 dark:text-blue-400">
           {icon}
         </div>
       </div>
