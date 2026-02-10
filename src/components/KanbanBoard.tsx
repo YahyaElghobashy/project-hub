@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Task, TaskStatus } from '../types';
 import { Badge, getPriorityVariant } from './Badge';
 import { Avatar } from './Avatar';
@@ -16,11 +16,31 @@ const columns: { id: TaskStatus; title: string; color: string }[] = [
   { id: 'done', title: 'Done', color: 'bg-green-500' },
 ];
 
+// BUG:BZ-101 - Kanban board uses HTML5 Drag and Drop API only, no touch fallback
 export function KanbanBoard({ tasks, onTaskClick }: KanbanBoardProps) {
   const { updateTaskStatus } = useProjectStore();
   const { members } = useTeamStore();
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null);
+
+  // BUG:BZ-101 - Detect touch device but don't provide fallback
+  useEffect(() => {
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (isTouchDevice) {
+      // BUG:BZ-101 - Log that touch device has no drag-and-drop support
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-101')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-101',
+            timestamp: Date.now(),
+            description: 'Drag-and-drop does not work on touch devices - no fallback provided',
+            page: 'Project Detail'
+          });
+        }
+      }
+    }
+  }, []);
 
   const getTasksByStatus = (status: TaskStatus) => {
     return tasks.filter((task) => task.status === status);
@@ -61,7 +81,8 @@ export function KanbanBoard({ tasks, onTaskClick }: KanbanBoardProps) {
   };
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4">
+    // BUG:BZ-101 - Only HTML5 drag-and-drop, no touch support
+    <div data-bug-id="BZ-101" className="flex gap-4 overflow-x-auto pb-4">
       {columns.map((column) => (
         <div
           key={column.id}

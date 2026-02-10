@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProjectStore } from '../store/projectStore';
 import { useTeamStore } from '../store/teamStore';
@@ -11,6 +11,21 @@ import { KanbanBoard } from '../components/KanbanBoard';
 import type { Task } from '../types';
 
 type Tab = 'board' | 'settings';
+
+// BUG:BZ-019 - Autocomplete race condition: fast typing causes selection from stale result set
+interface AssigneeResult {
+  id: string;
+  name: string;
+  avatar: string;
+}
+
+// BUG:BZ-102 - Undo stack pushes every keystroke instead of logical chunks
+interface UndoEntry {
+  value: string;
+  timestamp: number;
+}
+
+const AVAILABLE_TAGS = ['frontend', 'backend', 'design', 'bug', 'feature', 'documentation', 'testing', 'infrastructure', 'security', 'performance'];
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -31,11 +46,27 @@ export function ProjectDetailPage() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [newTask, setNewTask] = useState({
-    title: '',
-    description: '',
-    priority: 'medium' as Task['priority'],
-  });
+
+  // BUG:BZ-011 - Multi-step form wizard state
+  const [wizardStep, setWizardStep] = useState(1);
+  const [step1Data, setStep1Data] = useState({ title: '', priority: 'medium' as Task['priority'] });
+  const [step2Data, setStep2Data] = useState({ description: '', assigneeId: '' });
+  const [step3Data, setStep3Data] = useState({ tags: [] as string[], dueDate: '' });
+
+  // BUG:BZ-019 - Assignee autocomplete state
+  const [assigneeQuery, setAssigneeQuery] = useState('');
+  const [assigneeResults, setAssigneeResults] = useState<AssigneeResult[]>([]);
+  const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
+  const assigneeSearchVersion = useRef(0);
+
+  // BUG:BZ-102 - Undo/redo stack for task description
+  const [undoStack, setUndoStack] = useState<UndoEntry[]>([{ value: '', timestamp: Date.now() }]);
+  const [undoIndex, setUndoIndex] = useState(0);
+  const isUndoRedo = useRef(false);
+
+  // BUG:BZ-104 - Selected tags for task creation
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -45,14 +76,185 @@ export function ProjectDetailPage() {
     }
   }, [id, fetchProject, fetchTasks, fetchMembers]);
 
+  // BUG:BZ-019 - Autocomplete search with race condition
+  const searchAssignees = useCallback((query: string) => {
+    assigneeSearchVersion.current += 1;
+    const currentVersion = assigneeSearchVersion.current;
+
+    // Simulate async search with variable delay
+    const delay = query.length < 3 ? 300 : 100;
+    setTimeout(() => {
+      // BUG:BZ-019 - Don't check if version is still current before updating results
+      // This means old slow results can overwrite newer fast results
+      const filtered = members.filter(m =>
+        m.name.toLowerCase().includes(query.toLowerCase())
+      ).map(m => ({ id: m.id, name: m.name, avatar: m.avatar }));
+
+      // Bug: We update results without checking if this is still the latest query
+      // A shorter query (e.g. "ac") is slower (300ms) and overwrites faster results for "acme"
+      if (currentVersion < assigneeSearchVersion.current) {
+        // This check looks correct but is actually insufficient —
+        // there's a timing window where both versions match
+        return;
+      }
+      setAssigneeResults(filtered);
+
+      // BUG:BZ-019 - Log bug trigger
+      if (assigneeSearchVersion.current > 1 && currentVersion !== assigneeSearchVersion.current) {
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-019')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-019',
+              timestamp: Date.now(),
+              description: 'Autocomplete race condition selects wrong item',
+              page: 'Project Detail'
+            });
+          }
+        }
+      }
+    }, delay);
+  }, [members]);
+
+  const handleAssigneeSelect = (assignee: AssigneeResult) => {
+    setStep2Data(prev => ({ ...prev, assigneeId: assignee.id }));
+    setAssigneeQuery(assignee.name);
+    setShowAssigneeDropdown(false);
+
+    // BUG:BZ-019 - Log when user selects from potentially stale results
+    if (assigneeSearchVersion.current > 1) {
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-019')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-019',
+            timestamp: Date.now(),
+            description: 'Autocomplete race condition selects wrong item',
+            page: 'Project Detail'
+          });
+        }
+      }
+    }
+  };
+
+  // BUG:BZ-102 - Push every keystroke to undo stack
+  const handleDescriptionChange = (value: string) => {
+    if (isUndoRedo.current) {
+      isUndoRedo.current = false;
+      return;
+    }
+
+    setStep2Data(prev => ({ ...prev, description: value }));
+
+    // BUG:BZ-102 - Every single keystroke pushes to undo stack
+    // Should be debounced or grouped by logical chunks
+    const newEntry: UndoEntry = { value, timestamp: Date.now() };
+    setUndoStack(prev => {
+      const truncated = prev.slice(0, undoIndex + 1);
+      return [...truncated, newEntry];
+    });
+    setUndoIndex(prev => prev + 1);
+
+    // Log bug trigger when stack gets large
+    if (undoStack.length > 50) {
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-102')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-102',
+            timestamp: Date.now(),
+            description: 'Undo/redo stack overflow - every keystroke creates an entry',
+            page: 'Project Detail'
+          });
+        }
+      }
+    }
+  };
+
+  const handleUndo = () => {
+    if (undoIndex > 0) {
+      isUndoRedo.current = true;
+      const newIndex = undoIndex - 1;
+      setUndoIndex(newIndex);
+      setStep2Data(prev => ({ ...prev, description: undoStack[newIndex].value }));
+    }
+  };
+
+  const handleRedo = () => {
+    if (undoIndex < undoStack.length - 1) {
+      isUndoRedo.current = true;
+      const newIndex = undoIndex + 1;
+      setUndoIndex(newIndex);
+      setStep2Data(prev => ({ ...prev, description: undoStack[newIndex].value }));
+    }
+  };
+
+  // BUG:BZ-102 - Handle keyboard shortcuts for undo/redo
+  const handleDescriptionKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+      e.preventDefault();
+      if (e.shiftKey) {
+        handleRedo();
+      } else {
+        handleUndo();
+      }
+    }
+  };
+
+  // BUG:BZ-011 - Multi-step wizard navigation
+  const handleWizardNext = () => {
+    if (wizardStep < 3) {
+      setWizardStep(wizardStep + 1);
+    }
+  };
+
+  // BUG:BZ-011 - Going back clears step 2 data from state but DOM still shows stale values
+  const handleWizardBack = () => {
+    if (wizardStep > 1) {
+      // BUG:BZ-011 - Clear step 2 data when navigating back through it
+      // This looks like an intentional "reset" but it destroys data
+      // The DOM still shows the old values because React hasn't re-rendered the inputs yet
+      if (wizardStep === 3) {
+        setStep2Data({ description: '', assigneeId: '' });
+        setAssigneeQuery('');
+
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-011')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-011',
+              timestamp: Date.now(),
+              description: 'Multi-step form loses step 2 data on back navigation',
+              page: 'Project Detail'
+            });
+          }
+        }
+      }
+      setWizardStep(wizardStep - 1);
+    }
+  };
+
   const handleCreateTask = async () => {
-    if (!newTask.title.trim() || !id) return;
+    if (!step1Data.title.trim() || !id) return;
     await createTask({
-      ...newTask,
+      title: step1Data.title,
+      description: step2Data.description,
+      priority: step1Data.priority,
+      assigneeId: step2Data.assigneeId || null,
       projectId: id,
       status: 'todo',
+      tags: selectedTags,
+      dueDate: step3Data.dueDate || null,
     });
-    setNewTask({ title: '', description: '', priority: 'medium' });
+    // Reset wizard
+    setStep1Data({ title: '', priority: 'medium' });
+    setStep2Data({ description: '', assigneeId: '' });
+    setStep3Data({ tags: [], dueDate: '' });
+    setSelectedTags([]);
+    setAssigneeQuery('');
+    setWizardStep(1);
+    setUndoStack([{ value: '', timestamp: Date.now() }]);
+    setUndoIndex(0);
     setIsTaskModalOpen(false);
   };
 
@@ -64,6 +266,26 @@ export function ProjectDetailPage() {
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
+  };
+
+  // BUG:BZ-104 - Add tag to selection (but remove handler is broken)
+  const handleTagAdd = (tag: string) => {
+    if (!selectedTags.includes(tag)) {
+      setSelectedTags(prev => [...prev, tag]);
+    }
+    setShowTagDropdown(false);
+  };
+
+  const openTaskModal = () => {
+    setWizardStep(1);
+    setStep1Data({ title: '', priority: 'medium' });
+    setStep2Data({ description: '', assigneeId: '' });
+    setStep3Data({ tags: [], dueDate: '' });
+    setSelectedTags([]);
+    setAssigneeQuery('');
+    setUndoStack([{ value: '', timestamp: Date.now() }]);
+    setUndoIndex(0);
+    setIsTaskModalOpen(true);
   };
 
   if (isLoading || !currentProject) {
@@ -122,7 +344,7 @@ export function ProjectDetailPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setIsTaskModalOpen(true)}>
+          <Button variant="outline" onClick={openTaskModal}>
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
@@ -215,53 +437,272 @@ export function ProjectDetailPage() {
         </div>
       )}
 
-      {/* Create Task Modal */}
+      {/* Create Task Modal - Multi-step wizard */}
       <Modal
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
         title="Create New Task"
+        size="lg"
       >
-        <div className="space-y-4">
-          <Input
-            label="Task Title"
-            placeholder="Enter task title"
-            value={newTask.title}
-            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-          />
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Description
-            </label>
-            <textarea
-              placeholder="Enter task description"
-              value={newTask.description}
-              onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+        {/* BUG:BZ-011 - Multi-step wizard form that loses step 2 data on back navigation */}
+        <div data-bug-id="BZ-011">
+          {/* Progress indicator */}
+          <div className="flex items-center justify-between mb-6">
+            {[1, 2, 3].map((step) => (
+              <div key={step} className="flex items-center">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    step <= wizardStep
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
+                  }`}
+                >
+                  {step}
+                </div>
+                <span className={`ml-2 text-sm ${
+                  step <= wizardStep ? 'text-blue-600 font-medium' : 'text-gray-400'
+                }`}>
+                  {step === 1 ? 'Basic Info' : step === 2 ? 'Details' : 'Tags & Date'}
+                </span>
+                {step < 3 && (
+                  <div className={`w-12 h-0.5 mx-2 ${
+                    step < wizardStep ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                  }`} />
+                )}
+              </div>
+            ))}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Priority
-            </label>
-            <select
-              value={newTask.priority}
-              onChange={(e) => setNewTask({ ...newTask, priority: e.target.value as Task['priority'] })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="urgent">Urgent</option>
-            </select>
-          </div>
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={() => setIsTaskModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateTask} disabled={!newTask.title.trim()}>
-              Create Task
-            </Button>
+
+          {/* Step 1: Basic Info */}
+          {wizardStep === 1 && (
+            <div className="space-y-4">
+              <Input
+                label="Task Title"
+                placeholder="Enter task title"
+                value={step1Data.title}
+                onChange={(e) => setStep1Data({ ...step1Data, title: e.target.value })}
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Priority
+                </label>
+                <select
+                  value={step1Data.priority}
+                  onChange={(e) => setStep1Data({ ...step1Data, priority: e.target.value as Task['priority'] })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Details (Description + Assignee) */}
+          {wizardStep === 2 && (
+            <div className="space-y-4">
+              {/* BUG:BZ-102 - Description with per-keystroke undo stack */}
+              <div data-bug-id="BZ-102">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Description
+                  </label>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={handleUndo}
+                      disabled={undoIndex <= 0}
+                      className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 rounded"
+                      title="Undo (Ctrl+Z)"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a5 5 0 015 5v2M3 10l4-4M3 10l4 4" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRedo}
+                      disabled={undoIndex >= undoStack.length - 1}
+                      className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 rounded"
+                      title="Redo (Ctrl+Shift+Z)"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10H11a5 5 0 00-5 5v2M21 10l-4-4M21 10l-4 4" />
+                      </svg>
+                    </button>
+                    <span className="text-xs text-gray-400 ml-1">
+                      {undoIndex}/{undoStack.length - 1}
+                    </span>
+                  </div>
+                </div>
+                <textarea
+                  placeholder="Enter task description"
+                  value={step2Data.description}
+                  onChange={(e) => handleDescriptionChange(e.target.value)}
+                  onKeyDown={handleDescriptionKeyDown}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* BUG:BZ-019 - Assignee autocomplete with race condition */}
+              <div data-bug-id="BZ-019" className="relative">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Assignee
+                </label>
+                <Input
+                  placeholder="Search for a team member..."
+                  value={assigneeQuery}
+                  onChange={(e) => {
+                    const query = e.target.value;
+                    setAssigneeQuery(query);
+                    if (query.length > 0) {
+                      searchAssignees(query);
+                      setShowAssigneeDropdown(true);
+                    } else {
+                      setAssigneeResults([]);
+                      setShowAssigneeDropdown(false);
+                      setStep2Data(prev => ({ ...prev, assigneeId: '' }));
+                    }
+                  }}
+                  onFocus={() => {
+                    if (assigneeQuery.length > 0 && assigneeResults.length > 0) {
+                      setShowAssigneeDropdown(true);
+                    }
+                  }}
+                  onBlur={() => {
+                    // Delay to allow click on dropdown item
+                    setTimeout(() => setShowAssigneeDropdown(false), 200);
+                  }}
+                />
+                {showAssigneeDropdown && assigneeResults.length > 0 && (
+                  <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {assigneeResults.map((result) => (
+                      <button
+                        key={result.id}
+                        type="button"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 text-sm"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleAssigneeSelect(result);
+                        }}
+                      >
+                        <Avatar src={result.avatar} name={result.name} size="xs" />
+                        <span className="text-gray-900 dark:text-white">{result.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Tags & Due Date */}
+          {wizardStep === 3 && (
+            <div className="space-y-4">
+              {/* BUG:BZ-104 - Multi-select tag dropdown where remove (X) button has no handler */}
+              <div data-bug-id="BZ-104">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Tags
+                </label>
+                {/* Selected tags display */}
+                {selectedTags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {selectedTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full"
+                      >
+                        {tag}
+                        {/* BUG:BZ-104 - Remove button exists but onClick handler does nothing */}
+                        <button
+                          type="button"
+                          className="ml-0.5 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200"
+                          onClick={() => {
+                            // BUG:BZ-104 - Handler looks like it should remove the tag but doesn't
+                            // The console.log makes it look like it's "doing something"
+                            console.debug('tag:remove', tag);
+
+                            if (typeof window !== 'undefined') {
+                              window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                              if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-104')) {
+                                window.__PERCEPTR_TEST_BUGS__.push({
+                                  bugId: 'BZ-104',
+                                  timestamp: Date.now(),
+                                  description: 'Multi-select dropdown cannot deselect - remove button has no effect',
+                                  page: 'Project Detail'
+                                });
+                              }
+                            }
+                          }}
+                        >
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowTagDropdown(!showTagDropdown)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {selectedTags.length === 0 ? 'Select tags...' : `${selectedTags.length} tag${selectedTags.length > 1 ? 's' : ''} selected`}
+                  </button>
+                  {showTagDropdown && (
+                    <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {AVAILABLE_TAGS.filter(t => !selectedTags.includes(t)).map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          className="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 text-sm text-gray-900 dark:text-white"
+                          onClick={() => handleTagAdd(tag)}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <Input
+                label="Due Date"
+                type="date"
+                value={step3Data.dueDate}
+                onChange={(e) => setStep3Data({ ...step3Data, dueDate: e.target.value })}
+              />
+            </div>
+          )}
+
+          {/* Navigation buttons */}
+          <div className="flex justify-between pt-6">
+            <div>
+              {wizardStep > 1 && (
+                <Button variant="outline" onClick={handleWizardBack}>
+                  Back
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => setIsTaskModalOpen(false)}>
+                Cancel
+              </Button>
+              {wizardStep < 3 ? (
+                <Button onClick={handleWizardNext} disabled={wizardStep === 1 && !step1Data.title.trim()}>
+                  Next
+                </Button>
+              ) : (
+                <Button onClick={handleCreateTask} disabled={!step1Data.title.trim()}>
+                  Create Task
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </Modal>
