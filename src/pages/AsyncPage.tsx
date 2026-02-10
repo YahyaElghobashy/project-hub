@@ -93,7 +93,7 @@ export function AsyncPage() {
     <div className="p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Activity & Updates</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Activity & Updates</h1>
         <p className="mt-1 text-zinc-600 dark:text-zinc-400">
           Real-time activity feed, orders, and collaborative editing
         </p>
@@ -331,7 +331,7 @@ function OrderSubmission() {
             <select
               value={product}
               onChange={(e) => setProduct(e.target.value)}
-              className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
             >
               <option value="Widget Pro">Widget Pro — $29.99</option>
               <option value="Widget Basic">Widget Basic — $14.99</option>
@@ -604,7 +604,7 @@ function AutoSaveEditor() {
             value={content}
             onChange={(e) => handleContentChange(e.target.value)}
             rows={8}
-            className="block w-full text-sm text-zinc-700 dark:text-zinc-300 bg-transparent border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+            className="block w-full text-sm text-zinc-700 dark:text-zinc-300 bg-transparent border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 focus:border-blue-500 resize-none"
             placeholder="Start writing..."
           />
         </div>

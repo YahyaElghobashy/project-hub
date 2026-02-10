@@ -143,7 +143,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }: SidebarPro
           flex flex-col
           bg-white dark:bg-zinc-800
           border-r border-zinc-200 dark:border-zinc-700
-          transition-all duration-300 ease-in-out
+          transition-all duration-150 ease-in-out
           ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}
           ${isMobileOpen ? 'w-64 translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
@@ -192,7 +192,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }: SidebarPro
                 onClick={onMobileClose}
                 className={`
                   flex items-center gap-3 px-3 py-2 rounded-lg
-                  transition-colors duration-200
+                  transition-colors duration-150
                   ${isCollapsed ? 'justify-center' : ''}
                   ${
                     isItemActive

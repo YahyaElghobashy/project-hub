@@ -201,7 +201,7 @@ export function SearchPage() {
     <div className="p-6 lg:p-8 max-w-4xl mx-auto">
       {/* Search Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">Search</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white mb-4">Search</h1>
         {/* BUG:BZ-010 - Debounce trims last character from search query */}
         <div className="flex gap-4" data-bug-id="BZ-010">
           <div className="flex-1">
@@ -218,7 +218,7 @@ export function SearchPage() {
             data-bug-id="BZ-094"
             value={typeFilter}
             onChange={(e) => handleFilterChange(e.target.value)}
-            className="px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
           >
             <option value="">All Types</option>
             <option value="projects">Projects</option>

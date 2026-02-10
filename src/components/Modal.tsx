@@ -122,9 +122,9 @@ export function Modal({
           w-full ${sizeStyles[size]}
           max-h-[80vh] overflow-hidden
           bg-white dark:bg-zinc-800
-          rounded-xl shadow-xl
+          rounded-xl shadow-md
           transform transition-all
-          animate-in fade-in zoom-in-95 duration-200
+          animate-in fade-in zoom-in-95 duration-150
         `}
       >
         {(title || showCloseButton) && (

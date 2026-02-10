@@ -77,7 +77,7 @@ export function TopBar({ onMenuClick, isSidebarCollapsed }: TopBarProps) {
             <ChevronDown className="hidden md:block w-4 h-4 text-zinc-500" />
           </button>
 
-          <div className="absolute right-0 mt-2 w-48 py-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+          <div className="absolute right-0 mt-2 w-48 py-1 bg-white dark:bg-zinc-800 rounded-lg shadow-md border border-zinc-200 dark:border-zinc-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
             <div className="px-4 py-2 border-b border-zinc-200 dark:border-zinc-700">
               <p className="text-sm font-medium text-zinc-900 dark:text-white">{user?.name}</p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">{user?.email}</p>

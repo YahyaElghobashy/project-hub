@@ -142,7 +142,7 @@ export function LoginPage() {
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600 rounded-xl mb-4">
             <Zap className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Welcome back</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Welcome back</h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">Sign in to your ProjectHub account</p>
         </div>
 

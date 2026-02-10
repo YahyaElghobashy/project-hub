@@ -79,8 +79,8 @@ export function NotificationPanel() {
         className={`
           fixed top-0 right-0 h-full w-full sm:w-96
           bg-white dark:bg-zinc-800
-          shadow-xl z-50
-          transform transition-transform duration-300 ease-in-out
+          shadow-md z-50
+          transform transition-transform duration-150 ease-in-out
           ${isPanelOpen ? 'translate-x-0' : 'translate-x-full'}
         `}
       >

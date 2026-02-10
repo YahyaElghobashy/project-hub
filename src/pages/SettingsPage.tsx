@@ -337,7 +337,7 @@ export function SettingsPage() {
     <div className="p-6 lg:p-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Settings</h1>
         <p className="mt-1 text-zinc-600 dark:text-zinc-400">
           Manage your account settings and preferences
         </p>
@@ -352,7 +352,7 @@ export function SettingsPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`
                 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap
-                transition-colors duration-200
+                transition-colors duration-150
                 ${
                   activeTab === tab.id
                     ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
@@ -476,7 +476,7 @@ export function SettingsPage() {
                       id="country"
                       value={selectedCountry}
                       onChange={handleCountryChange}
-                      className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 focus:border-blue-500"
                     >
                       {countries.map((c) => (
                         <option key={c.value} value={c.value}>
@@ -502,7 +502,7 @@ export function SettingsPage() {
                       type="date"
                       value={startDate}
                       onChange={handleDateChange}
-                      className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 focus:border-blue-500"
                     />
                     {storedStartDate && (
                       <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
@@ -542,7 +542,7 @@ export function SettingsPage() {
                       placeholder="Tell us about yourself..."
                       rows={3}
                       style={{ height: '80px', overflow: 'hidden', resize: 'none' }}
-                      className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 focus:border-blue-500"
                     />
                     <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                       Brief description for your profile. Max 500 characters.
@@ -613,7 +613,7 @@ export function SettingsPage() {
                         value={budgetInput}
                         onChange={handleBudgetChange}
                         placeholder="1,234.56"
-                        className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 pl-7 pr-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 pl-7 pr-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
                     {parsedBudget !== null && (

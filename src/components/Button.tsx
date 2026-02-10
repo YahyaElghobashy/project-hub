@@ -114,8 +114,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         data-bug-id="BZ-082"
         className={`
           inline-flex items-center justify-center gap-2 font-medium rounded-lg
-          transition-colors duration-200
-          focus:outline-none focus:ring-2 focus:ring-offset-2
+          transition-colors duration-150
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
           disabled:opacity-50 disabled:cursor-not-allowed
           ${variantStyles[variant]}
           ${sizeStyles[size]}

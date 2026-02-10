@@ -52,14 +52,14 @@ export function ThemeToggle() {
     <div data-bug-id="BZ-084">
       <button
         onClick={handleToggle}
-        className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none bg-zinc-200 dark:bg-blue-600"
+        className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-150 focus:outline-none bg-zinc-200 dark:bg-blue-600"
         role="switch"
         aria-checked={isDark}
         aria-label="Toggle dark mode"
       >
         <span
           className={`
-            inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200
+            inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-150
             ${isDark ? 'translate-x-6' : 'translate-x-1'}
           `}
         />

@@ -593,7 +593,7 @@ export function ProjectDetailPage() {
     <div className="p-6 lg:p-8" data-page="project-detail">
       {/* BUG:BZ-106 - Conflict toast that only shows "Saved" without mentioning another user overwrote */}
       {showConflictToast && (
-        <div data-bug-id="BZ-106" className="fixed top-4 right-4 z-50 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-2 rounded-lg shadow-lg text-sm flex items-center gap-2">
+        <div data-bug-id="BZ-106" className="fixed top-4 right-4 z-50 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-2 rounded-lg shadow-md text-sm flex items-center gap-2">
           <Check className="w-4 h-4" />
           {lastSavedBy ? `Saved by ${lastSavedBy}` : 'Saved'}
         </div>
@@ -617,7 +617,7 @@ export function ProjectDetailPage() {
                 {getProjectIcon(currentProject.icon)}
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
+                <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
                   {currentProject.name}
                 </h1>
                 <div className="flex items-center gap-2 mt-1">
@@ -697,7 +697,7 @@ export function ProjectDetailPage() {
               Copy Link
             </Button>
             {showCopiedToast && (
-              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-green-600 text-white text-xs px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap z-50">
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-green-600 text-white text-xs px-3 py-1.5 rounded-lg shadow-md whitespace-nowrap z-50">
                 Copied!
               </div>
             )}
@@ -766,7 +766,7 @@ export function ProjectDetailPage() {
                   value={currentProject.description}
                   onChange={(e) => handleCollaborativeEdit('description', e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
                 />
               </div>
               <div>
@@ -776,7 +776,7 @@ export function ProjectDetailPage() {
                 <select
                   value={currentProject.status}
                   onChange={(e) => updateProject(currentProject.id, { status: e.target.value as typeof currentProject.status })}
-                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
                 >
                   <option value="active">Active</option>
                   <option value="on_hold">On Hold</option>
@@ -946,7 +946,7 @@ export function ProjectDetailPage() {
                 <select
                   value={step1Data.priority}
                   onChange={(e) => setStep1Data({ ...step1Data, priority: e.target.value as Task['priority'] })}
-                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -996,7 +996,7 @@ export function ProjectDetailPage() {
                   onChange={(e) => handleDescriptionChange(e.target.value)}
                   onKeyDown={handleDescriptionKeyDown}
                   rows={4}
-                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
                 />
               </div>
 
@@ -1031,7 +1031,7 @@ export function ProjectDetailPage() {
                   }}
                 />
                 {showAssigneeDropdown && assigneeResults.length > 0 && (
-                  <div className="absolute z-10 mt-1 w-full bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  <div className="absolute z-10 mt-1 w-full bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-lg shadow-md max-h-48 overflow-y-auto">
                     {assigneeResults.map((result) => (
                       <button
                         key={result.id}
@@ -1101,12 +1101,12 @@ export function ProjectDetailPage() {
                   <button
                     type="button"
                     onClick={() => setShowTagDropdown(!showTagDropdown)}
-                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
                   >
                     {selectedTags.length === 0 ? 'Select tags...' : `${selectedTags.length} tag${selectedTags.length > 1 ? 's' : ''} selected`}
                   </button>
                   {showTagDropdown && (
-                    <div className="absolute z-10 mt-1 w-full bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    <div className="absolute z-10 mt-1 w-full bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-lg shadow-md max-h-48 overflow-y-auto">
                       {AVAILABLE_TAGS.filter(t => !selectedTags.includes(t)).map((tag) => (
                         <button
                           key={tag}
@@ -1226,7 +1226,7 @@ export function ProjectDetailPage() {
           <div
             data-bug-id="BZ-107"
             ref={activityPanelRef}
-            className="absolute right-0 top-0 h-full w-96 bg-white dark:bg-zinc-800 shadow-xl border-l border-zinc-200 dark:border-zinc-700 overflow-y-auto"
+            className="absolute right-0 top-0 h-full w-96 bg-white dark:bg-zinc-800 shadow-md border-l border-zinc-200 dark:border-zinc-700 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-700">

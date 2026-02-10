@@ -35,7 +35,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               block w-full rounded-lg border
               px-3 py-2 text-sm
               placeholder:text-zinc-400
-              focus:outline-none focus:ring-2 focus:ring-offset-0
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
               disabled:bg-zinc-50 disabled:text-zinc-500 disabled:cursor-not-allowed
               dark:bg-zinc-800 dark:text-zinc-100
               ${leftIcon ? 'pl-10' : ''}

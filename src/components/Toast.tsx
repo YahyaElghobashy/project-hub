@@ -86,7 +86,7 @@ function ToastItem({ toast, onRemove }: { toast: ToastMessage; onRemove: (id: st
     // BUG:BZ-073 - Hardcoded bg-white, text-zinc-900, border-zinc-200 — no dark: variants
     // This creates a bright white toast on dark backgrounds when dark mode is active
     <div
-      className="flex items-center gap-3 px-4 py-3 bg-white border border-zinc-200 rounded-lg shadow-lg min-w-[300px] max-w-md animate-in slide-in-from-right fade-in duration-300"
+      className="flex items-center gap-3 px-4 py-3 bg-white border border-zinc-200 rounded-lg shadow-md min-w-[300px] max-w-md animate-in slide-in-from-right fade-in duration-150"
       role="alert"
     >
       {toastIconMap[toast.type]}

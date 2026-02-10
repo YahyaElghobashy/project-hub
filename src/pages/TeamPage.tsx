@@ -416,7 +416,7 @@ export function TeamPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Team Members</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Team Members</h1>
           <p className="mt-1 text-zinc-600 dark:text-zinc-400">
             Manage your team and their roles
           </p>
@@ -470,7 +470,7 @@ export function TeamPage() {
                   <select
                     value={member.role}
                     onChange={(e) => handleRoleChange(member.id, e.target.value as Role)}
-                    className="px-3 py-1.5 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-3 py-1.5 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
                   >
                     <option value="admin">Admin</option>
                     <option value="member">Member</option>
@@ -631,7 +631,7 @@ export function TeamPage() {
             <select
               value={inviteRole}
               onChange={(e) => setInviteRole(e.target.value as Role)}
-              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
             >
               <option value="admin">Admin</option>
               <option value="member">Member</option>

@@ -450,7 +450,7 @@ export function DashboardPage() {
     <div className="p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Dashboard</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Dashboard</h1>
         <p className="mt-1 text-zinc-600 dark:text-zinc-400">
           Welcome back! Here's what's happening with your projects.
         </p>
@@ -726,7 +726,7 @@ export function DashboardPage() {
           {/* BUG:BZ-108 - Tooltip that flickers between adjacent data points */}
           {chartTooltip && (
             <div
-              className="absolute pointer-events-none bg-zinc-900 text-white text-xs rounded-lg px-3 py-1.5 shadow-lg transform -translate-x-1/2 -translate-y-full z-10"
+              className="absolute pointer-events-none bg-zinc-900 text-white text-xs rounded-lg px-3 py-1.5 shadow-md transform -translate-x-1/2 -translate-y-full z-10"
               style={{
                 left: `${(chartTooltip.x / CHART_WIDTH) * 100}%`,
                 top: `${(chartTooltip.y / CHART_HEIGHT) * 100 - 5}%`,

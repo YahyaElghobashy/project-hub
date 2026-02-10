@@ -79,7 +79,7 @@ function FloatingInput({ label, name, type = 'text', autoComplete, value, onChan
           bg-white dark:bg-zinc-800
           border-zinc-300 dark:border-zinc-600
           text-zinc-900 dark:text-zinc-100
-          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+          focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 focus:border-blue-500
           placeholder-transparent
         `}
         placeholder={label}
@@ -90,7 +90,7 @@ function FloatingInput({ label, name, type = 'text', autoComplete, value, onChan
           so shouldFloat stays false and the label covers the text. */}
       <label
         className={`
-          absolute left-3 transition-all duration-200 pointer-events-none
+          absolute left-3 transition-all duration-150 pointer-events-none
           ${shouldFloat
             ? 'top-1 text-xs text-blue-600 dark:text-blue-400'
             : 'top-3.5 text-sm text-zinc-400 dark:text-zinc-500'
@@ -337,7 +337,7 @@ function FileUploadForm() {
       {isUploading && (
         <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-2">
           <div
-            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            className="bg-blue-600 h-2 rounded-full transition-all duration-150"
             style={{ width: `${uploadProgress}%` }}
           />
         </div>
@@ -466,7 +466,7 @@ function RichTextEditor() {
         ref={editorRef}
         contentEditable
         onPaste={handlePaste}
-        className="min-h-[200px] p-4 border border-zinc-300 dark:border-zinc-600 rounded-b-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 prose prose-sm max-w-none"
+        className="min-h-[200px] p-4 border border-zinc-300 dark:border-zinc-600 rounded-b-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 focus:border-blue-500 prose prose-sm max-w-none"
         role="textbox"
         aria-multiline="true"
         aria-label="Rich text editor"
@@ -626,7 +626,7 @@ function PricingForm() {
               type="text"
               value={item.price}
               onChange={(e) => handlePriceChange(item.id, e.target.value)}
-              className="w-full pl-7 pr-3 py-2 text-sm text-right border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-7 pr-3 py-2 text-sm text-right border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
               placeholder="0.00"
             />
           </div>
@@ -752,7 +752,7 @@ function ContactForm() {
             type="text"
             value={contactData.name}
             onChange={handleChange('name')}
-            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
             placeholder="Your full name"
           />
         </div>
@@ -766,7 +766,7 @@ function ContactForm() {
               type="text"
               value={contactData.email}
               onChange={handleChange('email')}
-              className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${
                 emailValid === true
                   ? 'border-green-400 dark:border-green-500'
                   : emailValid === false
@@ -800,7 +800,7 @@ function ContactForm() {
           type="text"
           value={contactData.subject}
           onChange={handleChange('subject')}
-          className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
           placeholder="What is this about?"
         />
       </div>
@@ -813,7 +813,7 @@ function ContactForm() {
           value={contactData.message}
           onChange={handleChange('message')}
           rows={4}
-          className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+          className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 resize-y"
           placeholder="Describe your question or feedback..."
         />
       </div>
@@ -874,7 +874,7 @@ export function FormsPage() {
   return (
     <div className="p-4 lg:p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Forms & Inputs</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Forms & Inputs</h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
           Manage checkout, file uploads, content editing, and pricing configuration.
         </p>

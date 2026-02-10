@@ -80,7 +80,7 @@ export function Dropdown({
       <button
         type="button"
         onClick={handleToggle}
-        className="w-full flex items-center justify-between px-3 py-2 text-sm bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg hover:border-zinc-400 dark:hover:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2 text-sm bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded-lg hover:border-zinc-400 dark:hover:border-zinc-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 transition-colors"
       >
         <span className={selectedOption ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-500'}>
           {selectedOption?.label || placeholder}
@@ -92,7 +92,7 @@ export function Dropdown({
 
       {isOpen && (
         <div
-          className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-lg shadow-lg z-30 max-h-60 overflow-y-auto"
+          className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-lg shadow-md z-30 max-h-60 overflow-y-auto"
         >
           {options.map((option) => (
             <button

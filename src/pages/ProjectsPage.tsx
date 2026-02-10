@@ -821,7 +821,7 @@ export function ProjectsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Projects</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Projects</h1>
           <p className="mt-1 text-zinc-600 dark:text-zinc-400">
             Manage and track all your projects
           </p>
@@ -878,7 +878,7 @@ export function ProjectsPage() {
             // BUG:BZ-045 - Status filter change resets column widths
             setColumnWidths({});
           }}
-          className="px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
         >
           <option value="">All Statuses</option>
           <option value="active">Active</option>
@@ -894,7 +894,7 @@ export function ProjectsPage() {
             // BUG:BZ-045 - Priority filter change resets column widths
             setColumnWidths({});
           }}
-          className="px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
         >
           <option value="">All Priorities</option>
           <option value="high">High</option>
@@ -1018,7 +1018,7 @@ export function ProjectsPage() {
               value={newProject.description}
               onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
             />
           </div>
           <div className="flex justify-end gap-3 pt-4">

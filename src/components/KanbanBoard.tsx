@@ -89,7 +89,7 @@ export function KanbanBoard({ tasks, onTaskClick }: KanbanBoardProps) {
           className={`
             flex-shrink-0 w-80 flex flex-col
             bg-zinc-100 dark:bg-zinc-800/50 rounded-lg
-            transition-colors duration-200
+            transition-colors duration-150
             ${dragOverColumn === column.id ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}
           `}
           onDragOver={(e) => handleDragOver(e, column.id)}
