@@ -120,7 +120,8 @@ export function LoginPage() {
         </div>
 
         {/* Form */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        {/* BUG:BZ-070 - Rate limiting on login only checks successful attempts, not failed ones */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6" data-bug-id="BZ-070">
           {/* BUG:BZ-008 - Form has both keydown Enter listener and onSubmit, causing double submissions */}
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-4" data-bug-id="BZ-008">
             {error && (

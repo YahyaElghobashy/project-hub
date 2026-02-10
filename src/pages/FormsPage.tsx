@@ -3,7 +3,7 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { useToast } from '../components/Toast';
 
-type FormSection = 'checkout' | 'upload' | 'editor' | 'pricing';
+type FormSection = 'checkout' | 'upload' | 'editor' | 'pricing' | 'contact';
 
 // ——————————————————————————————————————————————————————————
 // Checkout Form — BZ-006 (Tab Key Skips Fields) & BZ-007 (Autofill Breaks Layout)
@@ -498,9 +498,9 @@ function RichTextEditor() {
 function PricingForm() {
   const { showToast } = useToast();
   const [items, setItems] = useState([
-    { id: 1, name: 'Basic Plan', price: '29.99' },
-    { id: 2, name: 'Pro Plan', price: '79.99' },
-    { id: 3, name: 'Enterprise Plan', price: '199.99' },
+    { id: 1, name: 'Basic Plan', price: '29.99', quantity: 1 },
+    { id: 2, name: 'Pro Plan', price: '79.99', quantity: 1 },
+    { id: 3, name: 'Enterprise Plan', price: '199.99', quantity: 1 },
   ]);
 
   // BUG:BZ-014 - Currency Input Allows Invalid States
@@ -525,6 +525,33 @@ function PricingForm() {
     const filtered = newPrice.replace(/[^0-9.$,]/g, '');
     setItems(prev => prev.map(item =>
       item.id === id ? { ...item, price: filtered } : item
+    ));
+  };
+
+  // BUG:BZ-020 - Number Input Spinner Overflows Silently
+  // The quantity handler uses modulo arithmetic instead of clamping.
+  // When the value goes past max (999), it wraps to 0 instead of stopping.
+  // Similarly, going below 0 wraps to 999.
+  const handleQuantityChange = (id: number, newValue: number) => {
+    // BUG:BZ-020 - Wrap around using modulo instead of clamping to min/max
+    const wrapped = ((newValue % 1000) + 1000) % 1000;
+
+    if (newValue > 999 || newValue < 0) {
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-020')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-020',
+            timestamp: Date.now(),
+            description: 'Number input spinner overflowed past max (999) and wrapped to 0 instead of clamping',
+            page: 'Remaining Forms'
+          });
+        }
+      }
+    }
+
+    setItems(prev => prev.map(item =>
+      item.id === id ? { ...item, quantity: wrapped } : item
     ));
   };
 
@@ -558,7 +585,7 @@ function PricingForm() {
     // Calculate total — will produce NaN or wrong values with multiple decimals
     const total = items.reduce((sum, item) => {
       const parsed = parseFloat(item.price.replace(/[$,]/g, ''));
-      return sum + (isNaN(parsed) ? 0 : parsed);
+      return sum + (isNaN(parsed) ? 0 : parsed) * item.quantity;
     }, 0);
 
     showToast('success', `Pricing saved! Monthly total: $${total.toFixed(2)}`);
@@ -571,6 +598,34 @@ function PricingForm() {
           <div className="flex-1">
             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.name}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">Monthly subscription</p>
+          </div>
+          {/* BUG:BZ-020 - Quantity spinner wraps around past min/max instead of clamping */}
+          <div className="w-24" data-bug-id="BZ-020">
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">Licenses</label>
+            <div className="flex items-center">
+              <button
+                type="button"
+                onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-l-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                -
+              </button>
+              <input
+                type="number"
+                min={0}
+                max={999}
+                value={item.quantity}
+                onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 0)}
+                className="w-14 py-1 text-sm text-center border-t border-b border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+              <button
+                type="button"
+                onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-r-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                +
+              </button>
+            </div>
           </div>
           <div className="relative w-40">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
@@ -591,7 +646,7 @@ function PricingForm() {
           <p className="text-xs text-gray-500 dark:text-gray-400">
             ${items.reduce((sum, item) => {
               const parsed = parseFloat(item.price.replace(/[$,]/g, ''));
-              return sum + (isNaN(parsed) ? 0 : parsed);
+              return sum + (isNaN(parsed) ? 0 : parsed) * item.quantity;
             }, 0).toFixed(2)}
           </p>
         </div>
@@ -600,6 +655,180 @@ function PricingForm() {
         </Button>
       </div>
     </div>
+  );
+}
+
+// ——————————————————————————————————————————————————————————
+// Contact Form — BZ-018 (Copy-Paste Invisible Characters Break Validation)
+// ——————————————————————————————————————————————————————————
+
+// BUG:BZ-018 - Email validation regex doesn't account for zero-width characters
+// When copying an email from a PDF or rich text source, invisible characters
+// (U+200B zero-width space, U+200C, U+200D, U+FEFF BOM) may be included.
+// The frontend regex test treats these as valid, but the API backend rejects them.
+function isValidEmail(email: string): boolean {
+  // This regex matches normal email patterns but doesn't strip invisible Unicode
+  // Zero-width spaces (U+200B) are treated as valid characters by this test
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function ContactForm() {
+  const { showToast } = useToast();
+  const [contactData, setContactData] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: '',
+  });
+  const [emailValid, setEmailValid] = useState<boolean | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (field: string) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const value = e.target.value;
+    setContactData(prev => ({ ...prev, [field]: value }));
+
+    // BUG:BZ-018 - Validate email on change but don't strip zero-width characters
+    // The regex allows them through because they're not \s or @ or plain space
+    if (field === 'email') {
+      if (value.length > 0) {
+        setEmailValid(isValidEmail(value));
+      } else {
+        setEmailValid(null);
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!contactData.name.trim() || !contactData.email.trim() || !contactData.message.trim()) {
+      showToast('error', 'Please fill in all required fields');
+      return;
+    }
+
+    if (!isValidEmail(contactData.email)) {
+      showToast('error', 'Please enter a valid email address');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    // BUG:BZ-018 - Frontend validation passed, but the email may contain
+    // invisible zero-width characters that the backend will reject
+    const hasInvisibleChars = /[\u200B\u200C\u200D\uFEFF\u00AD\u2060]/.test(contactData.email);
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    if (hasInvisibleChars) {
+      // BUG:BZ-018 - API returns 422 because the email contains invalid characters
+      // Frontend showed "valid" but the backend strips/rejects zero-width chars
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-018')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-018',
+            timestamp: Date.now(),
+            description: 'Email with invisible zero-width characters passed frontend validation but API returned 422',
+            page: 'Remaining Forms'
+          });
+        }
+      }
+
+      setIsSubmitting(false);
+      showToast('error', 'Server error: Invalid email format (422)');
+      return;
+    }
+
+    setIsSubmitting(false);
+    showToast('success', 'Message sent successfully!');
+    setContactData({ name: '', email: '', subject: '', message: '' });
+    setEmailValid(null);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4" data-bug-id="BZ-018">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={contactData.name}
+            onChange={handleChange('name')}
+            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Your full name"
+          />
+        </div>
+        {/* BUG:BZ-018 - Email field doesn't sanitize invisible Unicode characters */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Email <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={contactData.email}
+              onChange={handleChange('email')}
+              className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                emailValid === true
+                  ? 'border-green-400 dark:border-green-500'
+                  : emailValid === false
+                  ? 'border-red-400 dark:border-red-500'
+                  : 'border-gray-300 dark:border-gray-600'
+              }`}
+              placeholder="you@example.com"
+            />
+            {emailValid === true && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 text-xs">
+                Valid
+              </span>
+            )}
+            {emailValid === false && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 text-xs">
+                Invalid
+              </span>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+            We'll use this to respond to your inquiry.
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Subject
+        </label>
+        <input
+          type="text"
+          value={contactData.subject}
+          onChange={handleChange('subject')}
+          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="What is this about?"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Message <span className="text-red-500">*</span>
+        </label>
+        <textarea
+          value={contactData.message}
+          onChange={handleChange('message')}
+          rows={4}
+          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+          placeholder="Describe your question or feedback..."
+        />
+      </div>
+
+      <Button type="submit" className="w-full" isLoading={isSubmitting}>
+        Send Message
+      </Button>
+    </form>
   );
 }
 
@@ -678,6 +907,15 @@ export function FormsPage() {
         </svg>
       ),
     },
+    {
+      id: 'contact',
+      label: 'Contact',
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      ),
+    },
   ];
 
   return (
@@ -748,6 +986,16 @@ export function FormsPage() {
               Configure pricing for subscription plans.
             </p>
             <PricingForm />
+          </div>
+        )}
+
+        {activeSection === 'contact' && (
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Contact Us</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+              Send a message to our team for support or feedback.
+            </p>
+            <ContactForm />
           </div>
         )}
       </Card>

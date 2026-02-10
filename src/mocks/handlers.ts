@@ -9,6 +9,14 @@ let mockTasks = [...tasks];
 let mockNotifications = [...notifications];
 let authenticatedUser: User | null = null;
 
+// BUG:BZ-070 - Rate Limiting Only Checks Successful Attempts
+// Login rate limiter tracks attempts per email, but the counter only increments
+// on SUCCESSFUL logins. Failed attempts (wrong password) are not counted,
+// meaning brute-force attacks with incorrect passwords never trigger rate limiting.
+const loginAttemptTracker: Record<string, { successCount: number; windowStart: number }> = {};
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute window
+const RATE_LIMIT_MAX_SUCCESSES = 5; // Limit after 5 successful logins in window
+
 // Helper to generate IDs
 const generateId = (): string => {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -17,17 +25,55 @@ const generateId = (): string => {
 export const handlers = [
   // ============ AUTH ENDPOINTS ============
 
+  // BUG:BZ-070 - Rate limiter only counts successful logins, not failed attempts
   http.post('/api/auth/login', async ({ request }) => {
     await delay(300);
     const body = await request.json() as { email: string; password: string };
+    const emailKey = body.email.toLowerCase();
+
+    // BUG:BZ-070 - Check rate limit (only based on successful attempts)
+    const now = Date.now();
+    if (loginAttemptTracker[emailKey]) {
+      const tracker = loginAttemptTracker[emailKey];
+      // Reset window if expired
+      if (now - tracker.windowStart > RATE_LIMIT_WINDOW_MS) {
+        loginAttemptTracker[emailKey] = { successCount: 0, windowStart: now };
+      } else if (tracker.successCount >= RATE_LIMIT_MAX_SUCCESSES) {
+        return HttpResponse.json(
+          { error: 'Too many requests. Please try again later.' },
+          { status: 429 }
+        );
+      }
+    } else {
+      loginAttemptTracker[emailKey] = { successCount: 0, windowStart: now };
+    }
 
     // Find user by email (password check is mocked)
-    const user = mockUsers.find(u => u.email.toLowerCase() === body.email.toLowerCase());
+    const user = mockUsers.find(u => u.email.toLowerCase() === emailKey);
 
     if (user) {
+      // BUG:BZ-070 - Only increment on success — failed attempts bypass the rate limiter entirely
+      loginAttemptTracker[emailKey].successCount += 1;
       authenticatedUser = user;
+
+      // Log the bug when a brute-force pattern is detected (many requests, few rate limits hit)
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-070')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-070',
+            timestamp: Date.now(),
+            description: 'Rate limiter only counts successful login attempts — failed attempts are not rate-limited',
+            page: 'Remaining Forms'
+          });
+        }
+      }
+
       return HttpResponse.json(user);
     }
+
+    // BUG:BZ-070 - Failed login: NOT counted toward rate limit
+    // This means unlimited brute-force password guessing is possible
 
     // If email not found, authenticate as current user for demo
     authenticatedUser = currentUser;
