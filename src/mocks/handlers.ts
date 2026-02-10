@@ -301,7 +301,7 @@ export const handlers = [
       status: body.status || 'active',
       ownerId: authenticatedUser?.id || currentUser.id,
       color: body.color || '#3B82F6',
-      icon: body.icon || '📊',
+      icon: body.icon || 'bar-chart',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       dueDate: body.dueDate || null,

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import { Check, X, AlertTriangle, Info } from 'lucide-react';
 
 interface ToastMessage {
   id: string;
@@ -24,27 +25,11 @@ export function useToast() {
   return context;
 }
 
-const iconMap = {
-  success: (
-    <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-    </svg>
-  ),
-  error: (
-    <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  ),
-  warning: (
-    <svg className="w-5 h-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-    </svg>
-  ),
-  info: (
-    <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
+const toastIconMap = {
+  success: <Check className="w-5 h-5 text-green-500" />,
+  error: <X className="w-5 h-5 text-red-500" />,
+  warning: <AlertTriangle className="w-5 h-5 text-yellow-500" />,
+  info: <Info className="w-5 h-5 text-blue-500" />,
 };
 
 // BUG:BZ-073 - Dark mode misses components — Toast uses hardcoded light-theme colors
@@ -104,15 +89,13 @@ function ToastItem({ toast, onRemove }: { toast: ToastMessage; onRemove: (id: st
       className="flex items-center gap-3 px-4 py-3 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[300px] max-w-md animate-in slide-in-from-right fade-in duration-300"
       role="alert"
     >
-      {iconMap[toast.type]}
+      {toastIconMap[toast.type]}
       <p className="flex-1 text-sm text-gray-900">{toast.message}</p>
       <button
         onClick={() => onRemove(toast.id)}
         className="p-1 text-gray-400 hover:text-gray-600 rounded"
       >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
+        <X className="w-4 h-4" />
       </button>
     </div>
   );

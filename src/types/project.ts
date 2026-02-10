@@ -23,6 +23,7 @@ export interface Project {
   status: ProjectStatus;
   ownerId: string;
   color: string;
+  /** Lucide icon name (e.g. 'bar-chart', 'rocket') rendered via getProjectIcon() */
   icon: string;
   createdAt: string;
   updatedAt: string;

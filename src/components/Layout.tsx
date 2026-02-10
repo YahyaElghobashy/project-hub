@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { NotificationPanel } from './NotificationPanel';
@@ -575,9 +576,7 @@ export function Layout() {
                 {crumbs.map((crumb, idx) => (
                   <li key={idx} className="flex items-center">
                     {idx > 0 && (
-                      <svg className="w-4 h-4 mx-1 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
+                      <ChevronRight className="w-4 h-4 mx-1 text-gray-300 dark:text-gray-600" />
                     )}
                     <span className={idx === crumbs.length - 1 ? 'text-gray-900 dark:text-gray-200 font-medium' : ''}>
                       {crumb}

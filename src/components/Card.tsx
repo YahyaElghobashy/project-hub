@@ -1,3 +1,5 @@
+import { TrendingUp, TrendingDown } from 'lucide-react';
+
 interface CardProps {
   children: React.ReactNode;
   className?: string;
@@ -60,13 +62,9 @@ export function SummaryCard({ title, value, icon, trend, className = '' }: Summa
               }`}
             >
               {trend.isPositive ? (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                </svg>
+                <TrendingUp className="w-4 h-4" />
               ) : (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                </svg>
+                <TrendingDown className="w-4 h-4" />
               )}
               {Math.abs(trend.value)}%
             </p>

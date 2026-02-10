@@ -62,7 +62,7 @@ const colors = [
   '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
 ];
 
-const icons = ['📊', '🚀', '💼', '📱', '🔧', '📈', '🎯', '💡', '🔒', '⚡'];
+const icons = ['bar-chart', 'rocket', 'briefcase', 'smartphone', 'wrench', 'trending-up', 'target', 'lightbulb', 'lock', 'zap'];
 
 const tags = [
   'frontend', 'backend', 'api', 'database', 'security', 'performance',
