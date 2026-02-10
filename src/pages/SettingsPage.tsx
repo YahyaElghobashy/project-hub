@@ -43,10 +43,41 @@ export function SettingsPage() {
     setIsDark(isDarkMode);
   }, []);
 
+  // BUG:BZ-017 - Form data encoding mangles Unicode names (diacritics, CJK, etc.)
+  // Uses encodeURIComponent + unescape to "sanitize" — this converts UTF-8 to Latin-1, creating mojibake
+  const sanitizeFormValue = (value: string): string => {
+    // This is a common encoding mistake: converting UTF-8 through URI encoding
+    // then unescaping as Latin-1, which corrupts non-ASCII characters
+    try {
+      return unescape(encodeURIComponent(value));
+    } catch {
+      return value;
+    }
+  };
+
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
-      await updateProfile({ name, email });
+      // Name displayed in UI stays correct (from 'name' state), but the value
+      // sent to the API is mangled through the encoding conversion
+      const encodedName = sanitizeFormValue(name);
+
+      // Log bug when non-ASCII characters are present and get mangled
+      if (encodedName !== name) {
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-017')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-017',
+              timestamp: Date.now(),
+              description: 'Unicode name mangled during form data encoding — mojibake stored in database',
+              page: 'Settings'
+            });
+          }
+        }
+      }
+
+      await updateProfile({ name: encodedName, email });
     } finally {
       setIsSaving(false);
     }
@@ -232,11 +263,14 @@ export function SettingsPage() {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <Input
-                    label="Full Name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
+                  {/* BUG:BZ-017 - Unicode names mangled during form encoding on save */}
+                  <div data-bug-id="BZ-017">
+                    <Input
+                      label="Full Name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                  </div>
                   <Input
                     label="Email Address"
                     type="email"
