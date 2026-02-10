@@ -11,7 +11,7 @@ interface Column<T> {
 interface TableProps<T> {
   data: T[];
   columns: Column<T>[];
-  keyExtractor: (item: T) => string;
+  keyExtractor: (item: T, index?: number) => string;
   onRowClick?: (item: T) => void;
   isLoading?: boolean;
   emptyMessage?: string;
@@ -140,9 +140,9 @@ export function Table<T extends Record<string, unknown>>({
               </td>
             </tr>
           ) : (
-            sortedData.map((item) => (
+            sortedData.map((item, index) => (
               <tr
-                key={keyExtractor(item)}
+                key={keyExtractor(item, index)}
                 className={`
                   bg-white dark:bg-gray-800
                   ${onRowClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50' : ''}

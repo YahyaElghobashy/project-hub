@@ -10,6 +10,16 @@ import { Avatar } from '../components/Avatar';
 import { Modal } from '../components/Modal';
 import type { Project, ProjectStatus } from '../types';
 
+// BUG:BZ-049 - Simulated real-time project names for WebSocket-like updates
+const REALTIME_PROJECT_NAMES = [
+  'Q4 Planning Review',
+  'Customer Feedback Analysis',
+  'Infrastructure Upgrade',
+  'Mobile App Redesign',
+  'Security Audit Sprint',
+  'Analytics Dashboard v3',
+];
+
 // BUG:BZ-045 - Column widths stored outside React state so they don't survive re-renders properly
 let savedColumnWidths: Record<string, number> = {};
 
@@ -25,6 +35,13 @@ export function ProjectsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newProject, setNewProject] = useState({ name: '', description: '' });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // BUG:BZ-049 - Real-time updates that insert rows at top, causing content shift
+  const [realtimeProjects, setRealtimeProjects] = useState<Project[]>([]);
+  const realtimeCounterRef = useRef(0);
+
+  // BUG:BZ-116 - Track whether new items were prepended (triggers index-keyed re-render)
+  const [recentlyPrepended, setRecentlyPrepended] = useState(false);
 
   // BUG:BZ-044 - Local overrides for inline-edited fields (only stores the edited field, not recalculated fields)
   const [inlineEdits, setInlineEdits] = useState<Record<string, Partial<Project>>>({});
@@ -62,6 +79,51 @@ export function ProjectsPage() {
     }
   }, [projects]);
 
+  // BUG:BZ-049 - Simulate WebSocket real-time updates that insert at top of list
+  useEffect(() => {
+    if (projects.length === 0) return;
+
+    const interval = setInterval(() => {
+      const idx = realtimeCounterRef.current % REALTIME_PROJECT_NAMES.length;
+      realtimeCounterRef.current += 1;
+
+      const newProject: Project = {
+        id: `rt-${Date.now()}-${idx}`,
+        name: REALTIME_PROJECT_NAMES[idx],
+        description: 'Auto-synced from team activity',
+        status: 'active' as ProjectStatus,
+        ownerId: projects[0]?.ownerId || 'user-1',
+        color: '#6366f1',
+        icon: '🔄',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        dueDate: null,
+        progress: Math.floor(Math.random() * 60),
+        taskCount: Math.floor(Math.random() * 20) + 1,
+        completedTaskCount: Math.floor(Math.random() * 10),
+      };
+
+      // BUG:BZ-049 - Insert at top without any "new data" indicator, causing row jump
+      setRealtimeProjects((prev) => [newProject, ...prev]);
+      // BUG:BZ-116 - Mark that we prepended, triggering index-key re-render path
+      setRecentlyPrepended(true);
+
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-049')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-049',
+            timestamp: Date.now(),
+            description: 'Real-time update inserts row at top, causing content shift and losing user position',
+            page: 'Projects Table',
+          });
+        }
+      }
+    }, 8000); // Every 8 seconds a "real-time" row appears
+
+    return () => clearInterval(interval);
+  }, [projects]);
+
   const getOwner = (ownerId: string) => {
     return members.find((m) => m.id === ownerId);
   };
@@ -73,8 +135,13 @@ export function ProjectsPage() {
     return 'low';
   };
 
+  // BUG:BZ-049 - Combine real-time projects with store projects (real-time inserted at top)
+  const allProjects = useMemo(() => {
+    return [...realtimeProjects, ...projects];
+  }, [realtimeProjects, projects]);
+
   // BUG:BZ-043 - Filter logic uses OR instead of AND when multiple filters are active
-  const filteredProjects = projects.filter((project) => {
+  const filteredProjects = allProjects.filter((project) => {
     const matchesSearch =
       project.name.toLowerCase().includes(search.toLowerCase()) ||
       project.description.toLowerCase().includes(search.toLowerCase());
@@ -524,6 +591,83 @@ export function ProjectsPage() {
         </span>
       ),
     },
+    {
+      // BUG:BZ-052 - Timezone-dependent sorting: sorts by raw UTC string but displays local time
+      key: 'createdAt',
+      header: 'Created',
+      sortable: true,
+      width: columnWidths['createdAt'] ? `${columnWidths['createdAt']}px` : undefined,
+      render: (project: Project) => (
+        <span className="text-sm text-gray-500 dark:text-gray-400" data-bug-id="BZ-052">
+          {/* BUG:BZ-052 - Display uses local time, but the Table sort compares raw ISO strings (UTC).
+              Records created at 11pm EST (4am UTC next day) appear out of order when sorted. */}
+          {new Date(project.createdAt).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+          })}
+        </span>
+      ),
+    },
+    {
+      // BUG:BZ-054 - Actions column where keyboard navigation can accidentally trigger buttons
+      key: 'actions',
+      header: '',
+      width: columnWidths['actions'] ? `${columnWidths['actions']}px` : '80px',
+      render: (project: Project) => (
+        <div className="flex items-center gap-1" data-bug-id="BZ-054">
+          {/* BUG:BZ-054 - These buttons can be accidentally triggered by keyboard navigation
+              (Enter/Space while focus is on the row or near the button) */}
+          <button
+            className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors focus:outline-none"
+            title="Archive project"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOptimisticUpdate(project.id, { status: 'archived' as ProjectStatus });
+
+              // BUG:BZ-054 - Log when action is triggered (especially via keyboard)
+              if (typeof window !== 'undefined') {
+                window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-054')) {
+                  window.__PERCEPTR_TEST_BUGS__.push({
+                    bugId: 'BZ-054',
+                    timestamp: Date.now(),
+                    description: 'Table keyboard navigation fires action - accidental archive triggered',
+                    page: 'Projects Table',
+                  });
+                }
+              }
+            }}
+            onKeyDown={(e) => {
+              // BUG:BZ-054 - Does not prevent default for Enter/Space, meaning keyboard
+              // navigation through the table can inadvertently trigger this action
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.stopPropagation();
+                handleOptimisticUpdate(project.id, { status: 'archived' as ProjectStatus });
+
+                if (typeof window !== 'undefined') {
+                  window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                  if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-054')) {
+                    window.__PERCEPTR_TEST_BUGS__.push({
+                      bugId: 'BZ-054',
+                      timestamp: Date.now(),
+                      description: 'Table keyboard navigation fires action - accidental archive via Enter/Space',
+                      page: 'Projects Table',
+                    });
+                  }
+                }
+              }
+            }}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8" />
+            </svg>
+          </button>
+        </div>
+      ),
+    },
   ];
 
   // BUG:BZ-039 - Log when long text is rendered without truncation
@@ -543,6 +687,52 @@ export function ProjectsPage() {
       }
     }
   }, [paginatedProjects]);
+
+  // BUG:BZ-052 - Log timezone-dependent sorting issue when the createdAt column has records
+  useEffect(() => {
+    if (displayProjects.length > 1) {
+      // Check if any two adjacent rows have createdAt dates that would sort differently
+      // when comparing UTC ISO strings vs local date display
+      const hasTimezoneIssue = displayProjects.some((p) => {
+        const utcDate = new Date(p.createdAt);
+        const localDay = utcDate.toLocaleDateString('en-US');
+        const utcDay = utcDate.toISOString().split('T')[0];
+        return localDay !== new Date(utcDay + 'T00:00:00').toLocaleDateString('en-US');
+      });
+
+      if (hasTimezoneIssue) {
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-052')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-052',
+              timestamp: Date.now(),
+              description: 'Timezone-dependent sorting: sorts by UTC but displays local time',
+              page: 'Projects Table',
+            });
+          }
+        }
+      }
+    }
+  }, [displayProjects]);
+
+  // BUG:BZ-116 - Log when prepending causes index-keyed re-render
+  useEffect(() => {
+    if (recentlyPrepended && displayProjects.length > 0) {
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-116')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-116',
+            timestamp: Date.now(),
+            description: 'Unkeyed list uses array index as key - prepending item causes full re-render of all rows',
+            page: 'Projects Table',
+          });
+        }
+      }
+      setRecentlyPrepended(false);
+    }
+  }, [recentlyPrepended, displayProjects]);
 
   return (
     <div className="p-6 lg:p-8">
@@ -642,6 +832,12 @@ export function ProjectsPage() {
       </div>
 
       {/* Table */}
+      {/* BUG:BZ-049 - Real-time update notification count (no visual indicator, just inserts at top) */}
+      {realtimeProjects.length > 0 && (
+        <div className="mb-2 text-xs text-gray-400" data-bug-id="BZ-049">
+          {realtimeProjects.length} new update{realtimeProjects.length !== 1 ? 's' : ''} synced
+        </div>
+      )}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700" data-bug-id="BZ-041">
         {/* BUG:BZ-045 - Column resize handles in header */}
         <div className="flex items-center px-4 py-2 border-b border-gray-200 dark:border-gray-700" data-bug-id="BZ-045">
@@ -687,15 +883,22 @@ export function ProjectsPage() {
             </div>
           </div>
         ) : (
-          <Table
-            key={tableKey}
-            data={displayProjects}
-            columns={columns}
-            keyExtractor={(project) => project.id}
-            onRowClick={(project) => navigate(`/projects/${project.id}`)}
-            isLoading={isLoading}
-            emptyMessage="No projects found"
-          />
+          // BUG:BZ-116 - When real-time projects are present, uses array index as key
+          // instead of stable project ID, causing all rows to re-render when a new item is prepended
+          <div data-bug-id="BZ-116">
+            <Table
+              key={tableKey}
+              data={displayProjects}
+              keyExtractor={realtimeProjects.length > 0
+                ? ((_project, index) => String(index))  // BUG:BZ-116 - Index key causes full re-render on prepend
+                : ((project) => project.id)
+              }
+              columns={columns}
+              onRowClick={(project) => navigate(`/projects/${project.id}`)}
+              isLoading={isLoading}
+              emptyMessage="No projects found"
+            />
+          </div>
         )}
         {totalPages > 1 && (
           <Pagination
