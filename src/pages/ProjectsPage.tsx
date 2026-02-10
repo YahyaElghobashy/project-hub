@@ -442,6 +442,38 @@ export function ProjectsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects, members]);
 
+  // BUG:BZ-115 - Bulk archive handler that does NOT clear selection after action
+  // After archiving selected items, the selection state (selectedIds) persists.
+  // The next page of items now appears with checkboxes checked on different rows,
+  // and any subsequent bulk action would affect the wrong items.
+  const handleBulkArchive = useCallback(async () => {
+    const idsToArchive = Array.from(selectedIds);
+    if (idsToArchive.length === 0) return;
+
+    // Archive all selected projects
+    for (const projectId of idsToArchive) {
+      await updateProject(projectId, { status: 'archived' as ProjectStatus });
+    }
+
+    // BUG:BZ-115 - Selection is NOT cleared after bulk action completes
+    // The selectedIds set still contains the old project IDs.
+    // If the archived items move off the current page or get filtered out,
+    // the checkboxes now apply to different rows (by index position).
+    // Should be: setSelectedIds(new Set());
+
+    if (typeof window !== 'undefined') {
+      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+      if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-115')) {
+        window.__PERCEPTR_TEST_BUGS__.push({
+          bugId: 'BZ-115',
+          timestamp: Date.now(),
+          description: 'Selection highlight persists after bulk archive - next bulk action affects wrong items',
+          page: 'Complex Interactions'
+        });
+      }
+    }
+  }, [selectedIds, updateProject]);
+
   const allVisibleSelected = paginatedProjects.length > 0 && paginatedProjects.every((p) => selectedIds.has(p.id));
 
   const columns = [
@@ -796,10 +828,20 @@ export function ProjectsPage() {
         </div>
         <div className="flex items-center gap-3">
           {selectedIds.size > 0 && (
-            <span className="text-sm text-gray-600 dark:text-gray-400" data-bug-id="BZ-042">
-              {/* BUG:BZ-042 - Shows total filtered count but only visible rows are selected */}
-              {filteredProjects.length} items selected
-            </span>
+            <div className="flex items-center gap-2" data-bug-id="BZ-042">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {/* BUG:BZ-042 - Shows total filtered count but only visible rows are selected */}
+                {filteredProjects.length} items selected
+              </span>
+              {/* BUG:BZ-115 - Bulk archive button that doesn't clear selection state after action */}
+              <button
+                data-bug-id="BZ-115"
+                onClick={handleBulkArchive}
+                className="px-3 py-1.5 text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
+              >
+                Archive Selected
+              </button>
+            </div>
           )}
           {/* BUG:BZ-048 - Export CSV button */}
           <Button variant="outline" onClick={handleExportCSV} data-bug-id="BZ-048">

@@ -114,6 +114,15 @@ export function ProjectDetailPage() {
   // permission check. In HTTP or iframe contexts, it silently fails but shows success toast.
   const [showCopiedToast, setShowCopiedToast] = useState(false);
 
+  // BUG:BZ-113 - Resize Observer layout thrashing state
+  const resizablePanelRef = useRef<HTMLDivElement>(null);
+  const [panelWidth, setPanelWidth] = useState<number | null>(null);
+
+  // BUG:BZ-114 - Custom color picker state (context menu not disabled)
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [customColor, setCustomColor] = useState(currentProject?.color || '#6366f1');
+  const PROJECT_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#6366f1', '#a855f7', '#ec4899'];
+
   // BUG:BZ-106 - Collaborative edit conflict tracking
   const editVersions = useRef<Record<string, EditVersion>>({});
   const [lastSavedBy, setLastSavedBy] = useState<string | null>(null);
@@ -221,6 +230,41 @@ export function ProjectDetailPage() {
       });
     }
   }, [showActivityPanel, fetchNotifications, markAllAsRead]);
+
+  // BUG:BZ-113 - ResizeObserver creates layout thrashing loop
+  // The observer reads the element's width, then sets an inline style that changes the width,
+  // which triggers the observer again. This creates a tight feedback loop that causes
+  // continuous layout recalculations and degrades performance to ~10fps during resizing.
+  useEffect(() => {
+    const el = resizablePanelRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const width = entry.contentRect.width;
+        // BUG:BZ-113 - Reading the width and immediately setting a new width
+        // based on it triggers another resize observation, creating a thrashing loop.
+        // The rounding ensures it oscillates: e.g. 399.5 → 400 → 400.5 → 401 → ...
+        const adjustedWidth = Math.round(width / 2) * 2 + (width % 2 < 1 ? 1 : 0);
+        setPanelWidth(adjustedWidth);
+
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-113')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-113',
+              timestamp: Date.now(),
+              description: 'ResizeObserver creates layout thrashing - observation triggers resize which re-triggers observer',
+              page: 'Complex Interactions'
+            });
+          }
+        }
+      }
+    });
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [activeTab]);
 
   // BUG:BZ-109 - Command palette keyboard shortcut
   useEffect(() => {
@@ -750,6 +794,101 @@ export function ProjectDetailPage() {
                   <option value="archived">Archived</option>
                 </select>
               </div>
+            </div>
+          </div>
+
+          {/* BUG:BZ-113 - Resizable widget panel with layout thrashing ResizeObserver */}
+          <div
+            data-bug-id="BZ-113"
+            ref={resizablePanelRef}
+            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 overflow-hidden resize-x"
+            style={{
+              resize: 'horizontal',
+              minWidth: '300px',
+              maxWidth: '100%',
+              // BUG:BZ-113 - Setting width from the ResizeObserver callback causes the
+              // observer to fire again, creating a layout thrashing feedback loop
+              ...(panelWidth !== null ? { width: `${panelWidth}px` } : {}),
+            }}
+          >
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Widget Layout
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+              Drag the right edge to resize this panel. Widget cards will adjust responsively.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {['Tasks Overview', 'Sprint Progress', 'Team Velocity', 'Burn Down'].map((widget) => (
+                <div key={widget} className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-600">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{widget}</p>
+                  <p className="text-xs text-gray-400 mt-1">Enabled</p>
+                </div>
+              ))}
+            </div>
+            {panelWidth !== null && (
+              <p className="text-xs text-gray-400 mt-3">Panel width: {panelWidth}px</p>
+            )}
+          </div>
+
+          {/* BUG:BZ-114 - Custom color picker where right-click shows browser context menu */}
+          <div
+            data-bug-id="BZ-114"
+            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6"
+          >
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Project Color
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+              Choose a color for this project. Right-click a swatch for more options.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {PROJECT_COLORS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  className={`w-10 h-10 rounded-lg border-2 transition-all hover:scale-110 ${
+                    customColor === color
+                      ? 'border-gray-900 dark:border-white ring-2 ring-offset-2 ring-blue-500'
+                      : 'border-transparent'
+                  }`}
+                  style={{ backgroundColor: color }}
+                  onClick={() => {
+                    setCustomColor(color);
+                    if (id) updateProject(id, { color });
+                  }}
+                  // BUG:BZ-114 - Missing onContextMenu={e => e.preventDefault()}
+                  // Right-clicking on these color swatches shows the browser's default context menu
+                  // instead of being suppressed or showing a custom menu.
+                  // The UI text says "Right-click for more options" but no custom menu is implemented.
+                  onContextMenu={() => {
+                    // BUG:BZ-114 - Should preventDefault() here to suppress browser context menu
+                    // and show a custom context menu instead. Instead, does nothing,
+                    // so both the browser default menu appears.
+
+                    if (typeof window !== 'undefined') {
+                      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                      if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-114')) {
+                        window.__PERCEPTR_TEST_BUGS__.push({
+                          bugId: 'BZ-114',
+                          timestamp: Date.now(),
+                          description: 'Context menu not disabled on custom UI - browser default context menu shown instead of custom menu',
+                          page: 'Complex Interactions'
+                        });
+                      }
+                    }
+                  }}
+                >
+                  {customColor === color && (
+                    <svg className="w-5 h-5 mx-auto text-white drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <div className="w-6 h-6 rounded" style={{ backgroundColor: customColor }} />
+              <span className="text-sm text-gray-600 dark:text-gray-400">{customColor}</span>
             </div>
           </div>
 
