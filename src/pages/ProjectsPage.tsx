@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProjectStore } from '../store/projectStore';
 import { useTeamStore } from '../store/teamStore';
@@ -8,11 +8,14 @@ import { Table, Pagination } from '../components/Table';
 import { Badge, getStatusVariant } from '../components/Badge';
 import { Avatar } from '../components/Avatar';
 import { Modal } from '../components/Modal';
-import type { Project } from '../types';
+import type { Project, ProjectStatus } from '../types';
+
+// BUG:BZ-045 - Column widths stored outside React state so they don't survive re-renders properly
+let savedColumnWidths: Record<string, number> = {};
 
 export function ProjectsPage() {
   const navigate = useNavigate();
-  const { projects, fetchProjects, createProject, isLoading } = useProjectStore();
+  const { projects, fetchProjects, createProject, updateProject, isLoading } = useProjectStore();
   const { members, fetchMembers } = useTeamStore();
 
   const [search, setSearch] = useState('');
@@ -23,12 +26,41 @@ export function ProjectsPage() {
   const [newProject, setNewProject] = useState({ name: '', description: '' });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  // BUG:BZ-044 - Local overrides for inline-edited fields (only stores the edited field, not recalculated fields)
+  const [inlineEdits, setInlineEdits] = useState<Record<string, Partial<Project>>>({});
+  const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
+
+  // BUG:BZ-045 - Column widths state that resets on any re-render trigger
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
+  const resizingRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
+
+  // BUG:BZ-046 - Stale snapshot for optimistic rollback (captured once, not updated)
+  const optimisticSnapshotRef = useRef<Record<string, Project>>({});
+
+  // BUG:BZ-047 - Virtual scroll state
+  const [useVirtualScroll, setUseVirtualScroll] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const ROW_HEIGHT = 48;
+  const VISIBLE_ROWS = 15;
+
   const itemsPerPage = 10;
 
   useEffect(() => {
     fetchProjects();
     fetchMembers();
   }, [fetchProjects, fetchMembers]);
+
+  // BUG:BZ-046 - Capture snapshot only once on initial load (becomes stale over time)
+  useEffect(() => {
+    if (projects.length > 0 && Object.keys(optimisticSnapshotRef.current).length === 0) {
+      const snapshot: Record<string, Project> = {};
+      projects.forEach((p) => {
+        snapshot[p.id] = { ...p };
+      });
+      optimisticSnapshotRef.current = snapshot;
+    }
+  }, [projects]);
 
   const getOwner = (ownerId: string) => {
     return members.find((m) => m.id === ownerId);
@@ -88,7 +120,12 @@ export function ProjectsPage() {
     }
     // Force table to remount by toggling a key, which resets sort state
     setTableKey((prev) => prev + 1);
-  }, []);
+
+    // BUG:BZ-045 - Column widths reset on page change because tableKey remount clears local state
+    // Save widths to module-level variable, but the re-initialization below doesn't restore them
+    savedColumnWidths = { ...columnWidths };
+    setColumnWidths({});
+  }, [columnWidths]);
 
   // BUG:BZ-041 - Table key forces remount on page change, resetting sort
   const [tableKey, setTableKey] = useState(0);
@@ -99,12 +136,90 @@ export function ProjectsPage() {
     currentPage * itemsPerPage
   );
 
+  // BUG:BZ-044 - Apply inline edits on top of paginated data (only the edited field, not recalculations)
+  const displayProjects = useMemo(() => {
+    return paginatedProjects.map((project) => {
+      const edits = inlineEdits[project.id];
+      if (edits) {
+        // BUG:BZ-044 - Merges only the edited field; "days open" and other computed fields remain stale
+        return { ...project, ...edits };
+      }
+      return project;
+    });
+  }, [paginatedProjects, inlineEdits]);
+
   const handleCreateProject = async () => {
     if (!newProject.name.trim()) return;
     await createProject(newProject);
     setNewProject({ name: '', description: '' });
     setIsCreateModalOpen(false);
   };
+
+  // BUG:BZ-044 - Inline edit handler that updates only the changed field locally
+  const handleInlineStatusChange = useCallback(async (projectId: string, newStatus: ProjectStatus) => {
+    // Update local display immediately (only status field)
+    setInlineEdits((prev) => ({
+      ...prev,
+      [projectId]: { ...prev[projectId], status: newStatus },
+    }));
+    setEditingCell(null);
+
+    // BUG:BZ-044 - The inline edit updates the status but doesn't recalculate dependent fields
+    // like "updatedAt" or progress-related displays until a full page refresh
+    if (typeof window !== 'undefined') {
+      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+      if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-044')) {
+        window.__PERCEPTR_TEST_BUGS__.push({
+          bugId: 'BZ-044',
+          timestamp: Date.now(),
+          description: 'Stale data after inline edit - related fields not updated',
+          page: 'Projects Table',
+        });
+      }
+    }
+
+    // Persist to API in background (but don't refresh dependent fields locally)
+    try {
+      await updateProject(projectId, { status: newStatus });
+    } catch {
+      // Silently fail — the local state already shows the new value
+    }
+  }, [updateProject]);
+
+  // BUG:BZ-046 - Optimistic update with wrong rollback data
+  const handleOptimisticUpdate = useCallback(async (projectId: string, updates: Partial<Project>) => {
+    // Apply optimistic update to inline edits
+    setInlineEdits((prev) => ({
+      ...prev,
+      [projectId]: { ...prev[projectId], ...updates },
+    }));
+
+    try {
+      await updateProject(projectId, updates);
+    } catch {
+      // BUG:BZ-046 - Rollback uses the stale snapshot captured on initial load,
+      // not the actual current state before the edit
+      const staleOriginal = optimisticSnapshotRef.current[projectId];
+      if (staleOriginal) {
+        setInlineEdits((prev) => ({
+          ...prev,
+          [projectId]: { status: staleOriginal.status, progress: staleOriginal.progress },
+        }));
+      }
+
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-046')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-046',
+            timestamp: Date.now(),
+            description: 'Optimistic UI rollback shows wrong previous state from stale cache',
+            page: 'Projects Table',
+          });
+        }
+      }
+    }
+  }, [updateProject]);
 
   // BUG:BZ-042 - Select All only selects visible page items
   const handleSelectAll = (checked: boolean) => {
@@ -141,13 +256,132 @@ export function ProjectsPage() {
     });
   };
 
+  // BUG:BZ-045 - Column resize handlers
+  const handleResizeStart = useCallback((e: React.MouseEvent, columnKey: string, currentWidth: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resizingRef.current = { key: columnKey, startX: e.clientX, startWidth: currentWidth };
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!resizingRef.current) return;
+      const diff = moveEvent.clientX - resizingRef.current.startX;
+      const newWidth = Math.max(60, resizingRef.current.startWidth + diff);
+      setColumnWidths((prev) => ({
+        ...prev,
+        [resizingRef.current!.key]: newWidth,
+      }));
+    };
+
+    const handleMouseUp = () => {
+      resizingRef.current = null;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+
+      // BUG:BZ-045 - Log bug when column is resized (it'll get reset on next state change)
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-045')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-045',
+            timestamp: Date.now(),
+            description: 'Column resize resets on re-render (sort, filter, page change)',
+            page: 'Projects Table',
+          });
+        }
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, []);
+
+  // BUG:BZ-047 - Virtual scroll calculation with off-by-one error
+  const getVirtualRows = useCallback((allRows: Project[]) => {
+    if (!useVirtualScroll || allRows.length < 50) return allRows;
+
+    // BUG:BZ-047 - Off-by-one: startIndex should be Math.floor but uses Math.round,
+    // causing some rows to appear twice or be skipped
+    const startIndex = Math.round(scrollTop / ROW_HEIGHT);
+    const endIndex = startIndex + VISIBLE_ROWS;
+
+    // The off-by-one from Math.round means the window can overlap with
+    // previous/next batch boundaries, duplicating or skipping rows
+    const virtualRows = allRows.slice(
+      Math.max(0, startIndex - 1),  // overscan of 1, but combined with round causes issues
+      Math.min(allRows.length, endIndex + 1)
+    );
+
+    if (startIndex > 0) {
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-047')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-047',
+            timestamp: Date.now(),
+            description: 'Virtual scroll duplicates rows due to off-by-one in row recycling',
+            page: 'Projects Table',
+          });
+        }
+      }
+    }
+
+    return virtualRows;
+  }, [useVirtualScroll, scrollTop]);
+
+  const handleVirtualScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    setScrollTop(e.currentTarget.scrollTop);
+  }, []);
+
+  // BUG:BZ-048 - CSV export that ignores current filters and sort
+  const handleExportCSV = useCallback(() => {
+    // BUG:BZ-048 - Uses `projects` (all unfiltered data) instead of `filteredProjects`
+    const dataToExport = projects;
+    const headers = ['Name', 'Status', 'Progress', 'Owner', 'Created', 'Updated'];
+
+    const csvRows = [
+      headers.join(','),
+      ...dataToExport.map((project) => {
+        const owner = getOwner(project.ownerId);
+        return [
+          `"${project.name}"`,
+          project.status,
+          `${project.progress}%`,
+          owner ? `"${owner.name}"` : '-',
+          new Date(project.createdAt).toLocaleDateString(),
+          new Date(project.updatedAt).toLocaleDateString(),
+        ].join(',');
+      }),
+    ];
+
+    if (typeof window !== 'undefined') {
+      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+      if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-048')) {
+        window.__PERCEPTR_TEST_BUGS__.push({
+          bugId: 'BZ-048',
+          timestamp: Date.now(),
+          description: 'CSV export ignores current filters and sorts - exports all data',
+          page: 'Projects Table',
+        });
+      }
+    }
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'projects.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects, members]);
+
   const allVisibleSelected = paginatedProjects.length > 0 && paginatedProjects.every((p) => selectedIds.has(p.id));
 
   const columns = [
     {
       key: 'select',
       header: '',
-      width: '40px',
+      width: columnWidths['select'] ? `${columnWidths['select']}px` : '40px',
       render: (project: Project) => (
         <input
           type="checkbox"
@@ -165,6 +399,7 @@ export function ProjectsPage() {
       key: 'name',
       header: 'Project',
       sortable: true,
+      width: columnWidths['name'] ? `${columnWidths['name']}px` : undefined,
       // BUG:BZ-039 - Long text breaks table layout (no truncation on description)
       render: (project: Project) => (
         <div className="flex items-center gap-3" data-bug-id="BZ-039">
@@ -188,15 +423,51 @@ export function ProjectsPage() {
       key: 'status',
       header: 'Status',
       sortable: true,
-      render: (project: Project) => (
-        <Badge variant={getStatusVariant(project.status)} dot>
-          {project.status.replace('_', ' ')}
-        </Badge>
-      ),
+      width: columnWidths['status'] ? `${columnWidths['status']}px` : undefined,
+      // BUG:BZ-044 - Inline editable status column
+      render: (project: Project) => {
+        const isEditing = editingCell?.id === project.id && editingCell?.field === 'status';
+        return (
+          <div data-bug-id="BZ-044">
+            {isEditing ? (
+              <select
+                autoFocus
+                value={project.status}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  handleInlineStatusChange(project.id, e.target.value as ProjectStatus);
+                }}
+                onBlur={() => setEditingCell(null)}
+                onClick={(e) => e.stopPropagation()}
+                className="px-2 py-1 text-sm border border-blue-400 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none"
+              >
+                <option value="active">Active</option>
+                <option value="on_hold">On Hold</option>
+                <option value="completed">Completed</option>
+                <option value="archived">Archived</option>
+              </select>
+            ) : (
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingCell({ id: project.id, field: 'status' });
+                }}
+                className="cursor-pointer"
+                title="Click to edit"
+              >
+                <Badge variant={getStatusVariant(project.status)} dot>
+                  {project.status.replace('_', ' ')}
+                </Badge>
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'ownerId',
       header: 'Owner',
+      width: columnWidths['ownerId'] ? `${columnWidths['ownerId']}px` : undefined,
       render: (project: Project) => {
         const owner = getOwner(project.ownerId);
         return owner ? (
@@ -213,15 +484,28 @@ export function ProjectsPage() {
       key: 'progress',
       header: 'Progress',
       sortable: true,
+      width: columnWidths['progress'] ? `${columnWidths['progress']}px` : undefined,
+      // BUG:BZ-046 - Progress column with optimistic update capability
       render: (project: Project) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" data-bug-id="BZ-046">
           <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full"
               style={{ width: `${project.progress}%`, backgroundColor: project.color }}
             />
           </div>
-          <span className="text-sm text-gray-500 dark:text-gray-400">{project.progress}%</span>
+          <span
+            className="text-sm text-gray-500 dark:text-gray-400 cursor-pointer hover:text-blue-600"
+            title="Click to mark complete"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (project.progress < 100) {
+                handleOptimisticUpdate(project.id, { progress: 100, status: 'completed' as ProjectStatus });
+              }
+            }}
+          >
+            {project.progress}%
+          </span>
         </div>
       ),
     },
@@ -229,6 +513,7 @@ export function ProjectsPage() {
       key: 'updatedAt',
       header: 'Last Updated',
       sortable: true,
+      width: columnWidths['updatedAt'] ? `${columnWidths['updatedAt']}px` : undefined,
       render: (project: Project) => (
         <span className="text-sm text-gray-500 dark:text-gray-400">
           {new Date(project.updatedAt).toLocaleDateString('en-US', {
@@ -276,6 +561,13 @@ export function ProjectsPage() {
               {filteredProjects.length} items selected
             </span>
           )}
+          {/* BUG:BZ-048 - Export CSV button */}
+          <Button variant="outline" onClick={handleExportCSV} data-bug-id="BZ-048">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Export CSV
+          </Button>
           <Button onClick={() => setIsCreateModalOpen(true)}>
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -294,6 +586,8 @@ export function ProjectsPage() {
             onChange={(e) => {
               setSearch(e.target.value);
               setCurrentPage(1);
+              // BUG:BZ-045 - Any filter change resets column widths
+              setColumnWidths({});
             }}
             leftIcon={
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -307,6 +601,8 @@ export function ProjectsPage() {
           onChange={(e) => {
             setStatusFilter(e.target.value);
             setCurrentPage(1);
+            // BUG:BZ-045 - Status filter change resets column widths
+            setColumnWidths({});
           }}
           className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
@@ -321,6 +617,8 @@ export function ProjectsPage() {
           onChange={(e) => {
             setPriorityFilter(e.target.value);
             setCurrentPage(1);
+            // BUG:BZ-045 - Priority filter change resets column widths
+            setColumnWidths({});
           }}
           className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
@@ -329,11 +627,24 @@ export function ProjectsPage() {
           <option value="medium">Medium</option>
           <option value="low">Low</option>
         </select>
+        {/* BUG:BZ-047 - Virtual scroll toggle for large datasets */}
+        {filteredProjects.length > 50 && (
+          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <input
+              type="checkbox"
+              checked={useVirtualScroll}
+              onChange={(e) => setUseVirtualScroll(e.target.checked)}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            Virtual scroll
+          </label>
+        )}
       </div>
 
       {/* Table */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700" data-bug-id="BZ-041">
-        <div className="flex items-center px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+        {/* BUG:BZ-045 - Column resize handles in header */}
+        <div className="flex items-center px-4 py-2 border-b border-gray-200 dark:border-gray-700" data-bug-id="BZ-045">
           <input
             type="checkbox"
             checked={allVisibleSelected}
@@ -345,16 +656,47 @@ export function ProjectsPage() {
               ? `${selectedIds.size} selected`
               : 'Select all'}
           </span>
+          <div className="ml-auto flex items-center gap-2">
+            {Object.keys(columnWidths).length > 0 && (
+              <span className="text-xs text-gray-400">
+                Columns resized
+              </span>
+            )}
+          </div>
         </div>
-        <Table
-          key={tableKey}
-          data={paginatedProjects}
-          columns={columns}
-          keyExtractor={(project) => project.id}
-          onRowClick={(project) => navigate(`/projects/${project.id}`)}
-          isLoading={isLoading}
-          emptyMessage="No projects found"
-        />
+        {/* BUG:BZ-047 - Virtual scroll container */}
+        {useVirtualScroll && filteredProjects.length > 50 ? (
+          <div
+            ref={scrollContainerRef}
+            data-bug-id="BZ-047"
+            style={{ height: `${VISIBLE_ROWS * ROW_HEIGHT}px`, overflow: 'auto' }}
+            onScroll={handleVirtualScroll}
+          >
+            <div style={{ height: `${filteredProjects.length * ROW_HEIGHT}px`, position: 'relative' }}>
+              <div style={{ position: 'absolute', top: `${Math.max(0, Math.round(scrollTop / ROW_HEIGHT) - 1) * ROW_HEIGHT}px`, width: '100%' }}>
+                <Table
+                  key={tableKey}
+                  data={getVirtualRows(filteredProjects)}
+                  columns={columns}
+                  keyExtractor={(project) => project.id}
+                  onRowClick={(project) => navigate(`/projects/${project.id}`)}
+                  isLoading={isLoading}
+                  emptyMessage="No projects found"
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <Table
+            key={tableKey}
+            data={displayProjects}
+            columns={columns}
+            keyExtractor={(project) => project.id}
+            onRowClick={(project) => navigate(`/projects/${project.id}`)}
+            isLoading={isLoading}
+            emptyMessage="No projects found"
+          />
+        )}
         {totalPages > 1 && (
           <Pagination
             currentPage={currentPage}
