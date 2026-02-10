@@ -8,6 +8,18 @@ import { Card } from '../components/Card';
 
 type Tab = 'profile' | 'notifications' | 'integrations' | 'appearance';
 
+// BUG:BZ-004 - Country dropdown off-by-one: displayed label and stored value are offset by 1
+const countries = [
+  { label: 'United States', value: 'US' },
+  { label: 'United Kingdom', value: 'GB' },
+  { label: 'Canada', value: 'CA' },
+  { label: 'Australia', value: 'AU' },
+  { label: 'Germany', value: 'DE' },
+  { label: 'France', value: 'FR' },
+  { label: 'Japan', value: 'JP' },
+  { label: 'Brazil', value: 'BR' },
+];
+
 export function SettingsPage() {
   const { user, updateProfile } = useAuthStore();
   const { preferences, updatePreferences } = useNotificationStore();
@@ -17,6 +29,14 @@ export function SettingsPage() {
   const [email, setEmail] = useState(user?.email || '');
   const [isDark, setIsDark] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState('US');
+  const [startDate, setStartDate] = useState('');
+  const [storedStartDate, setStoredStartDate] = useState('');
+  const [bio, setBio] = useState('');
+  const [hasReferralCode, setHasReferralCode] = useState(false);
+  const [referralCode, setReferralCode] = useState('');
+  const [budgetInput, setBudgetInput] = useState('');
+  const [parsedBudget, setParsedBudget] = useState<number | null>(null);
 
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains('dark');
@@ -41,6 +61,77 @@ export function SettingsPage() {
     } else {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
+    }
+  };
+
+  // BUG:BZ-004 - Dropdown handler stores value from wrong index (off by one)
+  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedIndex = e.target.selectedIndex;
+    // Off-by-one: use next index's value instead of selected index
+    const storedValue = countries[Math.min(selectedIndex + 1, countries.length - 1)]?.value || countries[selectedIndex].value;
+    setSelectedCountry(storedValue);
+
+    if (typeof window !== 'undefined') {
+      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+      if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-004')) {
+        window.__PERCEPTR_TEST_BUGS__.push({
+          bugId: 'BZ-004',
+          timestamp: Date.now(),
+          description: 'Dropdown stores value offset by one index from displayed label',
+          page: 'Settings'
+        });
+      }
+    }
+  };
+
+  // BUG:BZ-005 - Date picker stores previous day due to UTC conversion
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const dateStr = e.target.value;
+    setStartDate(dateStr);
+    // Convert to Date object then back — this introduces the off-by-one day bug
+    // new Date('2024-01-15') creates midnight UTC, toISOString gives correct date,
+    // but using toLocaleDateString with the date object subtracts a day in negative UTC offsets
+    if (dateStr) {
+      const date = new Date(dateStr);
+      // Store as ISO string — converting via toISOString without timezone adjustment
+      // causes the date to shift back by one day for users in positive UTC offsets
+      const isoDate = new Date(date.getTime()).toISOString().split('T')[0];
+      setStoredStartDate(isoDate);
+
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-005')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-005',
+            timestamp: Date.now(),
+            description: 'Date picker stores previous day due to UTC conversion bug',
+            page: 'Settings'
+          });
+        }
+      }
+    }
+  };
+
+  // BUG:BZ-016 - European locale number parsing truncates at comma
+  const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setBudgetInput(raw);
+    // Parse using parseFloat which stops at first non-numeric char (comma in European format)
+    const parsed = parseFloat(raw);
+    setParsedBudget(isNaN(parsed) ? null : parsed);
+
+    if (raw.includes(',') && !isNaN(parsed)) {
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-016')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-016',
+            timestamp: Date.now(),
+            description: 'European locale number format silently truncated at comma',
+            page: 'Settings'
+          });
+        }
+      }
     }
   };
 
@@ -124,40 +215,231 @@ export function SettingsPage() {
         <div className="flex-1 max-w-2xl">
           {/* Profile Tab */}
           {activeTab === 'profile' && (
-            <Card>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-                Profile Information
-              </h2>
-              <div className="flex items-center gap-4 mb-6">
-                <Avatar src={user?.avatar} name={user?.name} size="xl" />
-                <div>
-                  <Button variant="outline" size="sm">
-                    Change Avatar
-                  </Button>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    JPG, PNG or GIF. Max 2MB.
-                  </p>
+            <div className="space-y-6">
+              <Card>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                  Profile Information
+                </h2>
+                <div className="flex items-center gap-4 mb-6">
+                  <Avatar src={user?.avatar} name={user?.name} size="xl" />
+                  <div>
+                    <Button variant="outline" size="sm">
+                      Change Avatar
+                    </Button>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      JPG, PNG or GIF. Max 2MB.
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-4">
-                <Input
-                  label="Full Name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-                <Input
-                  label="Email Address"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                <div className="pt-4">
-                  <Button onClick={handleSaveProfile} isLoading={isSaving}>
-                    Save Changes
-                  </Button>
+                <div className="space-y-4">
+                  <Input
+                    label="Full Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                  <Input
+                    label="Email Address"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+
+                  {/* BUG:BZ-004 - Country dropdown stores wrong value (off by one index) */}
+                  <div data-bug-id="BZ-004" className="w-full">
+                    <label
+                      htmlFor="country"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
+                      Country
+                    </label>
+                    <select
+                      id="country"
+                      value={selectedCountry}
+                      onChange={handleCountryChange}
+                      className="block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      {countries.map((c) => (
+                        <option key={c.value} value={c.value}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Selected value: {selectedCountry}
+                    </p>
+                  </div>
+
+                  {/* BUG:BZ-005 - Date picker stores previous day due to UTC conversion */}
+                  <div data-bug-id="BZ-005" className="w-full">
+                    <label
+                      htmlFor="start-date"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
+                      Start Date
+                    </label>
+                    <input
+                      id="start-date"
+                      type="date"
+                      value={startDate}
+                      onChange={handleDateChange}
+                      className="block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    {storedStartDate && (
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Stored as: {storedStartDate}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* BUG:BZ-009 - Textarea with fixed height and overflow hidden */}
+                  <div data-bug-id="BZ-009" className="w-full">
+                    <label
+                      htmlFor="bio"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
+                      Bio
+                    </label>
+                    <textarea
+                      id="bio"
+                      value={bio}
+                      onChange={(e) => {
+                        setBio(e.target.value);
+                        // Log bug when content exceeds visible area
+                        if (e.target.value.length > 200) {
+                          if (typeof window !== 'undefined') {
+                            window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                            if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-009')) {
+                              window.__PERCEPTR_TEST_BUGS__.push({
+                                bugId: 'BZ-009',
+                                timestamp: Date.now(),
+                                description: 'Textarea content overflows with no scroll — text hidden below fold',
+                                page: 'Settings'
+                              });
+                            }
+                          }
+                        }
+                      }}
+                      placeholder="Tell us about yourself..."
+                      rows={3}
+                      style={{ height: '80px', overflow: 'hidden', resize: 'none' }}
+                      className="block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Brief description for your profile. Max 500 characters.
+                    </p>
+                  </div>
+
+                  <div className="pt-4">
+                    <Button onClick={handleSaveProfile} isLoading={isSaving}>
+                      Save Changes
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+
+              {/* Billing & Referral Section */}
+              <Card>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                  Billing & Referral
+                </h2>
+                <div className="space-y-4">
+                  {/* BUG:BZ-016 - Locale-specific number parsing silently fails */}
+                  <div data-bug-id="BZ-016" className="w-full">
+                    <label
+                      htmlFor="budget"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
+                      Monthly Budget
+                    </label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 text-sm">$</span>
+                      <input
+                        id="budget"
+                        type="text"
+                        value={budgetInput}
+                        onChange={handleBudgetChange}
+                        placeholder="1,234.56"
+                        className="block w-full rounded-lg border border-gray-300 dark:border-gray-600 pl-7 pr-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                    {parsedBudget !== null && (
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Parsed value: ${parsedBudget.toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* BUG:BZ-015 - Conditional referral code field doesn't clear when hidden */}
+                  <div data-bug-id="BZ-015">
+                    <label className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          I have a referral code
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Apply a referral code for a discount
+                        </p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={hasReferralCode}
+                        onChange={(e) => {
+                          setHasReferralCode(e.target.checked);
+                          // BUG: Does NOT clear referralCode when unchecked
+                          // The referral code stays in state and gets submitted
+                        }}
+                        className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                    </label>
+                    {hasReferralCode && (
+                      <div className="mt-3">
+                        <Input
+                          label="Referral Code"
+                          value={referralCode}
+                          onChange={(e) => setReferralCode(e.target.value)}
+                          placeholder="Enter your referral code"
+                        />
+                      </div>
+                    )}
+                    {/* Hidden field always submits the referral code value */}
+                    <input type="hidden" name="referralCode" value={referralCode} />
+                  </div>
+
+                  <div className="pt-4">
+                    <Button
+                      onClick={() => {
+                        // The payload always includes referralCode even when toggle is off
+                        const payload = {
+                          budget: parsedBudget,
+                          referralCode: referralCode, // BUG: should check hasReferralCode
+                          country: selectedCountry,
+                          startDate: storedStartDate,
+                          bio,
+                        };
+                        console.log('Submitting billing settings:', payload);
+
+                        // Log BZ-015 when referral code is submitted while toggle is off
+                        if (!hasReferralCode && referralCode) {
+                          if (typeof window !== 'undefined') {
+                            window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                            if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-015')) {
+                              window.__PERCEPTR_TEST_BUGS__.push({
+                                bugId: 'BZ-015',
+                                timestamp: Date.now(),
+                                description: 'Hidden referral code field still submitted in payload after toggle off',
+                                page: 'Settings'
+                              });
+                            }
+                          }
+                        }
+                      }}
+                    >
+                      Save Billing Settings
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
           )}
 
           {/* Notifications Tab */}
