@@ -21,9 +21,9 @@ enableMocking().then(() => {
   // Initialize Perceptr SDK AFTER MSW so SDK validation requests are intercepted
   try {
     Perceptr.init({
-      projectId: 'projecthub-bug-zoo',
+      projectId: 'proj_3KnALELTtl71QKRU63pc3Q',
       debug: true,
-      env: 'dev',
+      env: 'prod',
       network: {
         captureRequestBody: true,
         captureResponseBody: true,
