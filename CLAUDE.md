@@ -119,11 +119,11 @@ All 119 data-bug-id markers preserved. All 394 BUG:BZ- comments preserved. TypeS
 - Headings: `tracking-tight` added to all 11 page h1 elements
 - BZ-080 global `*:focus { outline: none }` bug preserved (uses different pseudo-class)
 
-### PENDING — Phase 5: Gradients
+### DONE — Phase 5: Gradients (`f8a3ba9`)
 
-4 minimal gradient touches (additive only):
-1. Auth pages background: `bg-gradient-to-br from-zinc-50 via-blue-50/30 to-zinc-50` (+ dark)
-2. Dashboard summary card icons: `bg-gradient-to-br from-blue-50 to-indigo-50/50`
+4 subtle gradient touches applied:
+1. Auth pages (Login/Signup): `bg-gradient-to-br from-zinc-50 via-blue-50/30 to-zinc-50` (+ dark)
+2. Dashboard SummaryCard icons: `bg-gradient-to-br from-blue-50 to-indigo-50/50`
 3. Sidebar active nav item: `bg-gradient-to-r from-blue-50 to-indigo-50/30`
 4. Sidebar logo mark: `bg-gradient-to-br from-blue-600 to-indigo-600`
 
