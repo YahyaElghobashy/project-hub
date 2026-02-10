@@ -8,6 +8,7 @@ import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import { TeamPage } from './pages/TeamPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SearchPage } from './pages/SearchPage';
+import { PerformancePage } from './pages/PerformancePage';
 import { ToastProvider } from './components/Toast';
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
           <Route path="/team" element={<TeamPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/search" element={<SearchPage />} />
+          <Route path="/performance" element={<PerformancePage />} />
         </Route>
 
         {/* Fallback */}
