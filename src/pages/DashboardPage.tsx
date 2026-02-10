@@ -35,6 +35,42 @@ interface BudgetEntry {
   status: 'on_track' | 'at_risk' | 'over_budget';
 }
 
+// BUG:BZ-108 - Chart data points for the task completion trend line chart
+// The data points are positioned close together so hovering between them causes tooltip flicker
+interface ChartDataPoint {
+  label: string;
+  value: number;
+  x: number;
+  y: number;
+}
+
+const CHART_WIDTH = 600;
+const CHART_HEIGHT = 200;
+const CHART_PADDING = 40;
+
+const generateChartData = (): ChartDataPoint[] => {
+  const rawData = [
+    { label: 'Mon', value: 42 },
+    { label: 'Tue', value: 38 },
+    { label: 'Wed', value: 45 },
+    { label: 'Thu', value: 44 },  // Close to Wed's value — causes flickering
+    { label: 'Fri', value: 51 },
+    { label: 'Sat', value: 48 },  // Close to Fri — another flicker zone
+    { label: 'Sun', value: 55 },
+  ];
+
+  const maxValue = Math.max(...rawData.map(d => d.value));
+  const minValue = Math.min(...rawData.map(d => d.value));
+  const valueRange = maxValue - minValue || 1;
+
+  return rawData.map((d, i) => ({
+    label: d.label,
+    value: d.value,
+    x: CHART_PADDING + (i / (rawData.length - 1)) * (CHART_WIDTH - 2 * CHART_PADDING),
+    y: CHART_PADDING + (1 - (d.value - minValue) / valueRange) * (CHART_HEIGHT - 2 * CHART_PADDING),
+  }));
+};
+
 const generateBudgetData = (): BudgetEntry[] => [
   { id: 'b1', projectName: 'Website Redesign', department: 'Engineering', allocated: 45000, spent: 32150.10, remaining: 12849.90, status: 'on_track' },
   { id: 'b2', projectName: 'Mobile App v2.0', department: 'Engineering', allocated: 78000, spent: 65200.20, remaining: 12799.80, status: 'at_risk' },
@@ -59,6 +95,12 @@ export function DashboardPage() {
   const { projects, fetchProjects, isLoading: projectsLoading } = useProjectStore();
   const { members, fetchMembers } = useTeamStore();
   const { notifications } = useNotificationStore();
+
+  // BUG:BZ-108 - Chart tooltip state for the task trend chart
+  // Tooltip flickers when hovering near the boundary between two close data points
+  const [chartTooltip, setChartTooltip] = useState<{ point: ChartDataPoint; x: number; y: number } | null>(null);
+  const chartDataPoints = useMemo(() => generateChartData(), []);
+  const chartSvgRef = useRef<SVGSVGElement>(null);
 
   // BUG:BZ-086 - Loading spinner never disappears
   // The loading state is set to true but never set to false in the success handler
@@ -274,6 +316,60 @@ export function DashboardPage() {
         }
       }
     }
+  }, []);
+
+  // BUG:BZ-108 - Chart mouse move handler with flickering tooltip
+  // When the mouse is between two close data points, the nearest-point detection
+  // rapidly alternates between them, causing the tooltip to flicker
+  const handleChartMouseMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    const svg = chartSvgRef.current;
+    if (!svg) return;
+
+    const rect = svg.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // BUG:BZ-108 - Find the nearest point using Euclidean distance
+    // When two points are close in value (like Wed=45/Thu=44, or Fri=51/Sat=48),
+    // small mouse movements cause the "nearest" point to alternate rapidly
+    let nearestPoint: ChartDataPoint | null = null;
+    let minDist = Infinity;
+
+    for (const point of chartDataPoints) {
+      const dist = Math.sqrt(Math.pow(mouseX - point.x, 2) + Math.pow(mouseY - point.y, 2));
+      // Bug: No hysteresis or minimum distance threshold — tooltip changes on every pixel
+      if (dist < minDist) {
+        minDist = dist;
+        nearestPoint = point;
+      }
+    }
+
+    if (nearestPoint && minDist < 80) {
+      // BUG:BZ-108 - Set tooltip on every mousemove without debounce
+      // The rapid state updates between two close points cause visual flickering
+      setChartTooltip({ point: nearestPoint, x: nearestPoint.x, y: nearestPoint.y });
+
+      // Log flicker when the nearest point changes rapidly
+      if (chartTooltip && chartTooltip.point.label !== nearestPoint.label) {
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-108')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-108',
+              timestamp: Date.now(),
+              description: 'Chart tooltip flickers at data point boundaries - rapid alternation between adjacent points',
+              page: 'Complex Interactions',
+            });
+          }
+        }
+      }
+    } else {
+      setChartTooltip(null);
+    }
+  }, [chartDataPoints, chartTooltip]);
+
+  const handleChartMouseLeave = useCallback(() => {
+    setChartTooltip(null);
   }, []);
 
   // Budget overview table state
@@ -555,6 +651,108 @@ export function DashboardPage() {
             );
           })()
         )}
+      </div>
+
+      {/* BUG:BZ-108 - Task Completion Trend chart with flickering tooltip */}
+      <div data-bug-id="BZ-108" className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Task Completion Trend</h2>
+        <div className="relative">
+          <svg
+            ref={chartSvgRef}
+            viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+            className="w-full h-48"
+            onMouseMove={handleChartMouseMove}
+            onMouseLeave={handleChartMouseLeave}
+          >
+            {/* Grid lines */}
+            {[0, 1, 2, 3, 4].map((i) => {
+              const y = CHART_PADDING + (i / 4) * (CHART_HEIGHT - 2 * CHART_PADDING);
+              return (
+                <line
+                  key={`grid-${i}`}
+                  x1={CHART_PADDING}
+                  y1={y}
+                  x2={CHART_WIDTH - CHART_PADDING}
+                  y2={y}
+                  stroke="currentColor"
+                  className="text-gray-200 dark:text-gray-700"
+                  strokeWidth={0.5}
+                />
+              );
+            })}
+
+            {/* Line path */}
+            <path
+              d={chartDataPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')}
+              fill="none"
+              stroke="#3b82f6"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+
+            {/* Area fill under the line */}
+            <path
+              d={[
+                ...chartDataPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`),
+                `L ${chartDataPoints[chartDataPoints.length - 1].x} ${CHART_HEIGHT - CHART_PADDING}`,
+                `L ${chartDataPoints[0].x} ${CHART_HEIGHT - CHART_PADDING}`,
+                'Z',
+              ].join(' ')}
+              fill="url(#chartGradient)"
+              opacity={0.15}
+            />
+
+            <defs>
+              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#3b82f6" />
+                <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+
+            {/* Data points */}
+            {chartDataPoints.map((point) => (
+              <circle
+                key={point.label}
+                cx={point.x}
+                cy={point.y}
+                r={chartTooltip?.point.label === point.label ? 5 : 3}
+                fill={chartTooltip?.point.label === point.label ? '#3b82f6' : '#fff'}
+                stroke="#3b82f6"
+                strokeWidth={2}
+                className="transition-all duration-75"
+              />
+            ))}
+
+            {/* X-axis labels */}
+            {chartDataPoints.map((point) => (
+              <text
+                key={`label-${point.label}`}
+                x={point.x}
+                y={CHART_HEIGHT - 10}
+                textAnchor="middle"
+                className="fill-gray-500 dark:fill-gray-400"
+                fontSize={11}
+              >
+                {point.label}
+              </text>
+            ))}
+          </svg>
+
+          {/* BUG:BZ-108 - Tooltip that flickers between adjacent data points */}
+          {chartTooltip && (
+            <div
+              className="absolute pointer-events-none bg-gray-900 text-white text-xs rounded-lg px-3 py-1.5 shadow-lg transform -translate-x-1/2 -translate-y-full z-10"
+              style={{
+                left: `${(chartTooltip.x / CHART_WIDTH) * 100}%`,
+                top: `${(chartTooltip.y / CHART_HEIGHT) * 100 - 5}%`,
+              }}
+            >
+              <span className="font-medium">{chartTooltip.point.label}</span>: {chartTooltip.point.value} tasks
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 w-2 h-2 bg-gray-900 rotate-45" />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Weekly Stats — BZ-081: Grid with 33.33% columns + gap causes overflow */}
@@ -864,6 +1062,107 @@ export function DashboardPage() {
             />
           ))}
         </div>
+      </div>
+
+      {/* BUG:BZ-112 - Integration status grid vulnerable to browser extension CSS injection */}
+      {/* This grid uses specific CSS class names and inline styles that conflict with
+          styles injected by popular browser extensions (Grammarly, ad blockers).
+          The grid layout relies on flex-basis calculations that break when extensions
+          add their own styles to elements matching common selectors. */}
+      <div data-bug-id="BZ-112" className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Integration Status</h2>
+        {/* BUG:BZ-112 - The data-gramm attribute and contentEditable trigger Grammarly injection.
+            The "sponsored" and "ad-slot" class names trigger ad blocker hiding rules.
+            Both scenarios silently break the grid layout for affected users. */}
+        <div
+          className="grid gap-4"
+          style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}
+        >
+          {[
+            { name: 'Slack', status: 'Connected', color: '#4A154B' },
+            { name: 'GitHub', status: 'Connected', color: '#24292F' },
+            { name: 'Jira', status: 'Syncing', color: '#0052CC' },
+            { name: 'Figma', status: 'Connected', color: '#F24E1E' },
+          ].map((integration) => (
+            <div
+              key={integration.name}
+              className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 relative"
+              data-gramm="false"
+              data-gramm_editor="false"
+              contentEditable={false}
+              suppressContentEditableWarning
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold"
+                  style={{ backgroundColor: integration.color }}
+                >
+                  {integration.name[0]}
+                </div>
+                <span className="font-medium text-gray-900 dark:text-white text-sm">
+                  {integration.name}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className={`w-2 h-2 rounded-full ${
+                  integration.status === 'Connected' ? 'bg-green-500' :
+                  integration.status === 'Syncing' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'
+                }`} />
+                <span className="text-xs text-gray-500 dark:text-gray-400">{integration.status}</span>
+              </div>
+              {/* Hidden element with class names that ad blockers target —
+                  when hidden by extension CSS, it collapses the parent card's height */}
+              <div
+                className="sponsored ad-slot"
+                style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '4px', borderRadius: '0 0 8px 8px', backgroundColor: integration.color, opacity: 0.3 }}
+              />
+            </div>
+          ))}
+        </div>
+        {(() => {
+          // BUG:BZ-112 - Detect if browser extension has injected conflicting styles
+          // Check after render if any integration cards have unexpected computed styles
+          if (typeof window !== 'undefined') {
+            // Use requestAnimationFrame to check after paint
+            requestAnimationFrame(() => {
+              const sponsoredEls = document.querySelectorAll('.sponsored.ad-slot');
+              const anyHidden = Array.from(sponsoredEls).some((el) => {
+                const style = window.getComputedStyle(el);
+                return style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0';
+              });
+
+              if (anyHidden) {
+                window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-112')) {
+                  window.__PERCEPTR_TEST_BUGS__.push({
+                    bugId: 'BZ-112',
+                    timestamp: Date.now(),
+                    description: 'Browser extension injects CSS that breaks layout - ad blocker hides elements with "sponsored" class',
+                    page: 'Complex Interactions',
+                  });
+                }
+              }
+
+              // Also check if Grammarly has injected its wrapper
+              const grammEls = document.querySelectorAll('[data-gramm]');
+              if (grammEls.length > 0) {
+                const grammWrapper = document.querySelector('grammarly-extension, grammarly-desktop-integration');
+                if (grammWrapper) {
+                  window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                  if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-112')) {
+                    window.__PERCEPTR_TEST_BUGS__.push({
+                      bugId: 'BZ-112',
+                      timestamp: Date.now(),
+                      description: 'Browser extension (Grammarly) injects CSS that conflicts with grid layout',
+                      page: 'Complex Interactions',
+                    });
+                  }
+                }
+              }
+            });
+          }
+          return null;
+        })()}
       </div>
 
       {/* Quick Actions */}

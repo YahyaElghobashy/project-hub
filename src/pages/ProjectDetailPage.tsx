@@ -109,6 +109,11 @@ export function ProjectDetailPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showTagDropdown, setShowTagDropdown] = useState(false);
 
+  // BUG:BZ-111 - Clipboard API fails silently
+  // "Copy to clipboard" button uses navigator.clipboard.writeText() without
+  // permission check. In HTTP or iframe contexts, it silently fails but shows success toast.
+  const [showCopiedToast, setShowCopiedToast] = useState(false);
+
   // BUG:BZ-106 - Collaborative edit conflict tracking
   const editVersions = useRef<Record<string, EditVersion>>({});
   const [lastSavedBy, setLastSavedBy] = useState<string | null>(null);
@@ -477,6 +482,37 @@ export function ProjectDetailPage() {
     setSelectedTask(task);
   };
 
+  // BUG:BZ-111 - Copy project link to clipboard without checking permissions
+  // Uses navigator.clipboard.writeText() which can silently fail in:
+  // - Non-HTTPS contexts
+  // - Iframe sandboxes without clipboard-write permission
+  // - When the page doesn't have focus
+  // Shows "Copied!" toast regardless of success or failure
+  const handleCopyProjectLink = useCallback(() => {
+    const projectUrl = `${window.location.origin}/projects/${id}`;
+
+    // BUG:BZ-111 - No permission check, no error handling
+    // navigator.clipboard.writeText() returns a Promise but we don't await/catch it
+    navigator.clipboard.writeText(projectUrl);
+
+    // Always show success toast, even if the clipboard write failed silently
+    setShowCopiedToast(true);
+    setTimeout(() => setShowCopiedToast(false), 2000);
+
+    // Log bug trigger
+    if (typeof window !== 'undefined') {
+      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+      if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-111')) {
+        window.__PERCEPTR_TEST_BUGS__.push({
+          bugId: 'BZ-111',
+          timestamp: Date.now(),
+          description: 'Clipboard API fails silently - "Copied!" toast shown but clipboard may be unchanged',
+          page: 'Complex Interactions',
+        });
+      }
+    }
+  }, [id]);
+
   // BUG:BZ-104 - Add tag to selection (but remove handler is broken)
   const handleTagAdd = (tag: string) => {
     if (!selectedTags.includes(tag)) {
@@ -563,20 +599,51 @@ export function ProjectDetailPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* BUG:BZ-107 - Activity button that opens notification panel */}
-          <Button variant="outline" onClick={() => setShowActivityPanel(!showActivityPanel)}>
-            <div className="relative">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-[8px] text-white flex items-center justify-center">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
+          {/* BUG:BZ-105 - Tooltip blocks click target */}
+          {/* The tooltip on this button appears directly over the button text/icon area,
+              so clicking dismisses the tooltip instead of triggering the button action */}
+          <div data-bug-id="BZ-105" className="relative group">
+            <Button variant="outline" onClick={() => {
+              setShowActivityPanel(!showActivityPanel);
+            }}>
+              <div className="relative">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-[8px] text-white flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </div>
+              Activity
+            </Button>
+            {/* BUG:BZ-105 - Tooltip positioned to overlap the button click area */}
+            {/* The tooltip's bottom edge sits directly over the button, intercepting click events.
+                On hover, user sees tooltip, moves to click, tooltip captures the mousedown instead. */}
+            <div
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-0 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap z-50 transition-opacity duration-150"
+              onClick={(e) => {
+                // BUG:BZ-105 - Tooltip intercepts the click, consuming it
+                e.stopPropagation();
+
+                if (typeof window !== 'undefined') {
+                  window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                  if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-105')) {
+                    window.__PERCEPTR_TEST_BUGS__.push({
+                      bugId: 'BZ-105',
+                      timestamp: Date.now(),
+                      description: 'Tooltip blocks click target - click dismisses tooltip instead of triggering button',
+                      page: 'Complex Interactions',
+                    });
+                  }
+                }
+              }}
+            >
+              View project activity and notifications
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-2 h-2 bg-gray-900 rotate-45" />
             </div>
-            Activity
-          </Button>
+          </div>
           {/* BUG:BZ-109 - Command palette trigger button */}
           <Button variant="outline" onClick={() => { setShowCommandPalette(true); setCommandQuery(''); }}>
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -585,6 +652,20 @@ export function ProjectDetailPage() {
             <span className="hidden sm:inline">Search</span>
             <kbd className="hidden sm:inline-flex ml-1 px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded">⌘K</kbd>
           </Button>
+          {/* BUG:BZ-111 - Copy project link button that uses clipboard API without permission check */}
+          <div data-bug-id="BZ-111" className="relative">
+            <Button variant="outline" onClick={handleCopyProjectLink}>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+              </svg>
+              Copy Link
+            </Button>
+            {showCopiedToast && (
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-green-600 text-white text-xs px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap z-50">
+                Copied!
+              </div>
+            )}
+          </div>
           <Button variant="outline" onClick={openTaskModal}>
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

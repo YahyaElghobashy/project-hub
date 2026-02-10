@@ -670,6 +670,56 @@ export function ProjectsPage() {
     },
   ];
 
+  // BUG:BZ-103 - Copy/paste from app table loses structure
+  // When user selects table rows and copies, the clipboard content concatenates all cell text
+  // into a single string instead of preserving tab-delimited structure for spreadsheet paste
+  const handleTableCopy = useCallback((e: ClipboardEvent) => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const selectedText = selection.toString();
+    // Only intercept if the selection looks like it came from within the table
+    const anchorNode = selection.anchorNode;
+    if (!anchorNode) return;
+    const tableContainer = (anchorNode as HTMLElement).closest?.('[data-table-copyable]')
+      || (anchorNode.parentElement)?.closest?.('[data-table-copyable]');
+    if (!tableContainer) return;
+
+    // BUG:BZ-103 - Override clipboard with plain concatenated text
+    // Instead of preserving the tab/newline structure from the HTML table,
+    // join all text content with spaces, destroying the column structure
+    const rows = tableContainer.querySelectorAll('tr');
+    const textParts: string[] = [];
+    rows.forEach((row) => {
+      const cells = row.querySelectorAll('td, th');
+      // Bug: Join cells with space instead of tab (\t), destroying spreadsheet structure
+      const rowText = Array.from(cells).map(cell => (cell as HTMLElement).textContent?.trim() || '').join(' ');
+      textParts.push(rowText);
+    });
+
+    const flatText = textParts.join(' ');
+    e.clipboardData?.setData('text/plain', flatText);
+    // Bug: Don't set text/html with proper table markup either
+    e.preventDefault();
+
+    if (typeof window !== 'undefined') {
+      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+      if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-103')) {
+        window.__PERCEPTR_TEST_BUGS__.push({
+          bugId: 'BZ-103',
+          timestamp: Date.now(),
+          description: 'Copy/paste from app table loses structure - all data concatenated into single cell',
+          page: 'Complex Interactions',
+        });
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener('copy', handleTableCopy);
+    return () => document.removeEventListener('copy', handleTableCopy);
+  }, [handleTableCopy]);
+
   // BUG:BZ-039 - Log when long text is rendered without truncation
   useEffect(() => {
     const hasLongDescription = paginatedProjects.some((p) => p.description.length > 100);
@@ -838,6 +888,8 @@ export function ProjectsPage() {
           {realtimeProjects.length} new update{realtimeProjects.length !== 1 ? 's' : ''} synced
         </div>
       )}
+      {/* BUG:BZ-103 - data-table-copyable marks this table for the copy handler that strips structure */}
+      <div data-bug-id="BZ-103" data-table-copyable>
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700" data-bug-id="BZ-041">
         {/* BUG:BZ-045 - Column resize handles in header */}
         <div className="flex items-center px-4 py-2 border-b border-gray-200 dark:border-gray-700" data-bug-id="BZ-045">
@@ -907,6 +959,7 @@ export function ProjectsPage() {
             onPageChange={handlePageChange}
           />
         )}
+      </div>
       </div>
 
       {/* Create Project Modal */}
