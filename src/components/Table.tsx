@@ -37,6 +37,19 @@ export function Table<T extends Record<string, unknown>>({
       setSortKey(key);
       setSortOrder('asc');
     }
+
+    // BUG:BZ-038 - Sort arrow visual indicator is inverted
+    if (typeof window !== 'undefined') {
+      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+      if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-038')) {
+        window.__PERCEPTR_TEST_BUGS__.push({
+          bugId: 'BZ-038',
+          timestamp: Date.now(),
+          description: 'Sort arrow points wrong direction',
+          page: 'Projects Table',
+        });
+      }
+    }
   };
 
   const sortedData = sortKey
@@ -99,9 +112,11 @@ export function Table<T extends Record<string, unknown>>({
               >
                 <div className="flex items-center gap-1">
                   {column.header}
-                  {column.sortable && sortKey === column.key && (
+                  {/* BUG:BZ-038 - Sort arrow points wrong direction (condition inverted) */}
+                {column.sortable && sortKey === column.key && (
                     <svg
-                      className={`w-4 h-4 transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`}
+                      data-bug-id="BZ-038"
+                      className={`w-4 h-4 transition-transform ${sortOrder === 'asc' ? 'rotate-180' : ''}`}
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
