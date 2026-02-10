@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { useToast } from '../components/Toast';
+import { ShoppingCart, Upload, PenSquare, DollarSign, Mail, CloudUpload, FileText, List, ListOrdered } from 'lucide-react';
 
 type FormSection = 'checkout' | 'upload' | 'editor' | 'pricing' | 'contact';
 
@@ -301,9 +302,7 @@ function FileUploadForm() {
   return (
     <div className="space-y-4" data-bug-id="BZ-012">
       <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
-        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-        </svg>
+        <CloudUpload className="mx-auto h-12 w-12 text-gray-400" />
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
           Drag and drop a file, or click to browse
         </p>
@@ -317,9 +316,7 @@ function FileUploadForm() {
       {selectedFile && (
         <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
           <div className="flex items-center gap-3">
-            <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+            <FileText className="w-8 h-8 text-blue-500" />
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedFile.name}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -453,18 +450,14 @@ function RichTextEditor() {
           onClick={() => execCommand('insertUnorderedList')}
           className="p-2 rounded text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          <List className="w-4 h-4" />
         </button>
         <button
           type="button"
           onClick={() => execCommand('insertOrderedList')}
           className="p-2 rounded text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-          </svg>
+          <ListOrdered className="w-4 h-4" />
         </button>
       </div>
 
@@ -871,51 +864,11 @@ export function FormsPage() {
   }, [activeSection]);
 
   const sections: { id: FormSection; label: string; icon: React.ReactNode }[] = [
-    {
-      id: 'checkout',
-      label: 'Checkout',
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
-        </svg>
-      ),
-    },
-    {
-      id: 'upload',
-      label: 'File Upload',
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-        </svg>
-      ),
-    },
-    {
-      id: 'editor',
-      label: 'Rich Editor',
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-        </svg>
-      ),
-    },
-    {
-      id: 'pricing',
-      label: 'Pricing',
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-    },
-    {
-      id: 'contact',
-      label: 'Contact',
-      icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-      ),
-    },
+    { id: 'checkout', label: 'Checkout', icon: <ShoppingCart className="w-5 h-5" /> },
+    { id: 'upload', label: 'File Upload', icon: <Upload className="w-5 h-5" /> },
+    { id: 'editor', label: 'Rich Editor', icon: <PenSquare className="w-5 h-5" /> },
+    { id: 'pricing', label: 'Pricing', icon: <DollarSign className="w-5 h-5" /> },
+    { id: 'contact', label: 'Contact', icon: <Mail className="w-5 h-5" /> },
   ];
 
   return (

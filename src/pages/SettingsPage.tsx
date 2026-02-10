@@ -6,6 +6,7 @@ import { Input } from '../components/Input';
 import { Avatar } from '../components/Avatar';
 import { Card } from '../components/Card';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { User, Bell, Link2, Palette } from 'lucide-react';
 
 type Tab = 'profile' | 'notifications' | 'integrations' | 'appearance';
 
@@ -290,10 +291,10 @@ export function SettingsPage() {
   };
 
   const tabs = [
-    { id: 'profile' as Tab, label: 'Profile', icon: '👤' },
-    { id: 'notifications' as Tab, label: 'Notifications', icon: '🔔' },
-    { id: 'integrations' as Tab, label: 'Integrations', icon: '🔗' },
-    { id: 'appearance' as Tab, label: 'Appearance', icon: '🎨' },
+    { id: 'profile' as Tab, label: 'Profile', icon: <User className="w-4 h-4" /> },
+    { id: 'notifications' as Tab, label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
+    { id: 'integrations' as Tab, label: 'Integrations', icon: <Link2 className="w-4 h-4" /> },
+    { id: 'appearance' as Tab, label: 'Appearance', icon: <Palette className="w-4 h-4" /> },
   ];
 
   const integrations = [

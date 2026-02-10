@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useProjectStore } from '../store/projectStore';
 import { useAuthStore } from '../store/authStore';
+import { Globe, Database, Zap, Search as SearchIcon, Mail, Lock, BarChart3 } from 'lucide-react';
 
 // BUG:BZ-118 - Bundle includes unused libraries
 // Importing the entire lodash library (70KB+ gzipped) just to use _.capitalize
@@ -87,7 +88,7 @@ interface ServiceHealth {
   status: 'healthy' | 'degraded' | 'down';
   uptime: number;
   latency: number;
-  icon: string;
+  icon: React.ReactNode;
 }
 
 // ---------- Realistic mock data ----------
@@ -123,14 +124,14 @@ const generateErrorLogs = (): ErrorLogEntry[] => [
 ];
 
 const serviceHealthData: ServiceHealth[] = [
-  { name: 'API Gateway', status: 'healthy', uptime: 99.98, latency: 12, icon: '🌐' },
-  { name: 'Database Primary', status: 'healthy', uptime: 99.99, latency: 3, icon: '🗄️' },
-  { name: 'Cache Layer', status: 'healthy', uptime: 99.95, latency: 1, icon: '⚡' },
-  { name: 'Search Index', status: 'degraded', uptime: 99.82, latency: 45, icon: '🔍' },
-  { name: 'Queue Worker', status: 'healthy', uptime: 99.97, latency: 8, icon: '📬' },
-  { name: 'CDN', status: 'healthy', uptime: 100.0, latency: 5, icon: '🌍' },
-  { name: 'Auth Service', status: 'healthy', uptime: 99.99, latency: 15, icon: '🔒' },
-  { name: 'Analytics Pipeline', status: 'degraded', uptime: 98.50, latency: 120, icon: '📊' },
+  { name: 'API Gateway', status: 'healthy', uptime: 99.98, latency: 12, icon: <Globe className="w-5 h-5" /> },
+  { name: 'Database Primary', status: 'healthy', uptime: 99.99, latency: 3, icon: <Database className="w-5 h-5" /> },
+  { name: 'Cache Layer', status: 'healthy', uptime: 99.95, latency: 1, icon: <Zap className="w-5 h-5" /> },
+  { name: 'Search Index', status: 'degraded', uptime: 99.82, latency: 45, icon: <SearchIcon className="w-5 h-5" /> },
+  { name: 'Queue Worker', status: 'healthy', uptime: 99.97, latency: 8, icon: <Mail className="w-5 h-5" /> },
+  { name: 'CDN', status: 'healthy', uptime: 100.0, latency: 5, icon: <Globe className="w-5 h-5" /> },
+  { name: 'Auth Service', status: 'healthy', uptime: 99.99, latency: 15, icon: <Lock className="w-5 h-5" /> },
+  { name: 'Analytics Pipeline', status: 'degraded', uptime: 98.50, latency: 120, icon: <BarChart3 className="w-5 h-5" /> },
 ];
 
 // BUG:BZ-117 - Image Not Lazy Loaded Below Fold
@@ -547,7 +548,7 @@ export function PerformancePage() {
             {serviceHealthData.map(service => (
               <div key={service.name} className="bg-white dark:bg-gray-800 p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">{service.icon}</span>
+                  <span className="text-gray-600 dark:text-gray-300">{service.icon}</span>
                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{service.name}</span>
                 </div>
                 <div className="flex items-center gap-2">

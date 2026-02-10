@@ -9,6 +9,8 @@ import { Avatar } from '../components/Avatar';
 import { Modal } from '../components/Modal';
 import { Input } from '../components/Input';
 import { KanbanBoard } from '../components/KanbanBoard';
+import { getProjectIcon } from '../utils/iconMap';
+import { ChevronLeft, Bell, Search, ClipboardCopy, Plus, Undo2, Redo2, X, Check, Settings, LayoutDashboard, Trash2, ArrowLeft } from 'lucide-react';
 import type { Task } from '../types';
 
 type Tab = 'board' | 'settings';
@@ -294,12 +296,12 @@ export function ProjectDetailPage() {
 
   // BUG:BZ-109 - Command palette items and filtered results
   const commandPaletteItems = useMemo(() => [
-    { id: 'add-task', label: 'Add New Task', action: () => { openTaskModal(); setShowCommandPalette(false); }, icon: '+' },
-    { id: 'settings', label: 'Settings', action: () => { setActiveTab('settings'); setShowCommandPalette(false); }, icon: '⚙' },
-    { id: 'board', label: 'Board View', action: () => { setActiveTab('board'); setShowCommandPalette(false); }, icon: '◫' },
-    { id: 'delete-project', label: 'Delete Project', action: () => { setIsDeleteModalOpen(true); setShowCommandPalette(false); }, icon: '🗑' },
-    { id: 'back-to-projects', label: 'Back to Projects', action: () => { navigate('/projects'); }, icon: '←' },
-    { id: 'activity', label: 'Activity', action: () => { setShowActivityPanel(true); setShowCommandPalette(false); }, icon: '🔔' },
+    { id: 'add-task', label: 'Add New Task', action: () => { openTaskModal(); setShowCommandPalette(false); }, icon: <Plus className="w-4 h-4" /> },
+    { id: 'settings', label: 'Settings', action: () => { setActiveTab('settings'); setShowCommandPalette(false); }, icon: <Settings className="w-4 h-4" /> },
+    { id: 'board', label: 'Board View', action: () => { setActiveTab('board'); setShowCommandPalette(false); }, icon: <LayoutDashboard className="w-4 h-4" /> },
+    { id: 'delete-project', label: 'Delete Project', action: () => { setIsDeleteModalOpen(true); setShowCommandPalette(false); }, icon: <Trash2 className="w-4 h-4" /> },
+    { id: 'back-to-projects', label: 'Back to Projects', action: () => { navigate('/projects'); }, icon: <ArrowLeft className="w-4 h-4" /> },
+    { id: 'activity', label: 'Activity', action: () => { setShowActivityPanel(true); setShowCommandPalette(false); }, icon: <Bell className="w-4 h-4" /> },
   ], [navigate]);
 
   // BUG:BZ-109 - Filter using the broken fuzzy match algorithm
@@ -592,9 +594,7 @@ export function ProjectDetailPage() {
       {/* BUG:BZ-106 - Conflict toast that only shows "Saved" without mentioning another user overwrote */}
       {showConflictToast && (
         <div data-bug-id="BZ-106" className="fixed top-4 right-4 z-50 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-2 rounded-lg shadow-lg text-sm flex items-center gap-2">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
+          <Check className="w-4 h-4" />
           {lastSavedBy ? `Saved by ${lastSavedBy}` : 'Saved'}
         </div>
       )}
@@ -606,9 +606,7 @@ export function ProjectDetailPage() {
             onClick={() => navigate('/projects')}
             className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <ChevronLeft className="w-5 h-5" />
           </button>
           <div>
             <div className="flex items-center gap-3">
@@ -616,7 +614,7 @@ export function ProjectDetailPage() {
                 className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
                 style={{ backgroundColor: `${currentProject.color}20`, color: currentProject.color }}
               >
-                {currentProject.icon}
+                {getProjectIcon(currentProject.icon)}
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -651,9 +649,7 @@ export function ProjectDetailPage() {
               setShowActivityPanel(!showActivityPanel);
             }}>
               <div className="relative">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
+                <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-[8px] text-white flex items-center justify-center">
                     {unreadCount > 9 ? '9+' : unreadCount}
@@ -690,18 +686,14 @@ export function ProjectDetailPage() {
           </div>
           {/* BUG:BZ-109 - Command palette trigger button */}
           <Button variant="outline" onClick={() => { setShowCommandPalette(true); setCommandQuery(''); }}>
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+            <Search className="w-5 h-5" />
             <span className="hidden sm:inline">Search</span>
             <kbd className="hidden sm:inline-flex ml-1 px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded">⌘K</kbd>
           </Button>
           {/* BUG:BZ-111 - Copy project link button that uses clipboard API without permission check */}
           <div data-bug-id="BZ-111" className="relative">
             <Button variant="outline" onClick={handleCopyProjectLink}>
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-              </svg>
+              <ClipboardCopy className="w-5 h-5" />
               Copy Link
             </Button>
             {showCopiedToast && (
@@ -711,9 +703,7 @@ export function ProjectDetailPage() {
             )}
           </div>
           <Button variant="outline" onClick={openTaskModal}>
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
+            <Plus className="w-5 h-5" />
             Add Task
           </Button>
         </div>
@@ -879,9 +869,7 @@ export function ProjectDetailPage() {
                   }}
                 >
                   {customColor === color && (
-                    <svg className="w-5 h-5 mx-auto text-white drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
+                    <Check className="w-5 h-5 mx-auto text-white drop-shadow" strokeWidth={3} />
                   )}
                 </button>
               ))}
@@ -986,9 +974,7 @@ export function ProjectDetailPage() {
                       className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 rounded"
                       title="Undo (Ctrl+Z)"
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a5 5 0 015 5v2M3 10l4-4M3 10l4 4" />
-                      </svg>
+                      <Undo2 className="w-4 h-4" />
                     </button>
                     <button
                       type="button"
@@ -997,9 +983,7 @@ export function ProjectDetailPage() {
                       className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 rounded"
                       title="Redo (Ctrl+Shift+Z)"
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10H11a5 5 0 00-5 5v2M21 10l-4-4M21 10l-4 4" />
-                      </svg>
+                      <Redo2 className="w-4 h-4" />
                     </button>
                     <span className="text-xs text-gray-400 ml-1">
                       {undoIndex}/{undoStack.length - 1}
@@ -1107,9 +1091,7 @@ export function ProjectDetailPage() {
                             }
                           }}
                         >
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
+                          <X className="w-3 h-3" />
                         </button>
                       </span>
                     ))}
@@ -1253,9 +1235,7 @@ export function ProjectDetailPage() {
                 onClick={() => setShowActivityPanel(false)}
                 className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-4 space-y-3">
@@ -1307,9 +1287,7 @@ export function ProjectDetailPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-              <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <Search className="w-5 h-5 text-gray-400" />
               <input
                 ref={commandInputRef}
                 type="text"
@@ -1338,7 +1316,7 @@ export function ProjectDetailPage() {
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
                     onClick={item.action}
                   >
-                    <span className="w-6 text-center text-base">{item.icon}</span>
+                    <span className="w-6 flex items-center justify-center">{item.icon}</span>
                     <span className="text-gray-900 dark:text-white">{item.label}</span>
                   </button>
                 ))

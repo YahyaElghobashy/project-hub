@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Input } from '../components/Input';
 import { Avatar } from '../components/Avatar';
 import { Badge, getStatusVariant } from '../components/Badge';
+import { getProjectIcon } from '../utils/iconMap';
+import { Search, ClipboardList } from 'lucide-react';
 import type { Project, Task, User } from '../types';
 
 interface SearchResults {
@@ -208,11 +210,7 @@ export function SearchPage() {
               placeholder="Search projects, tasks, or team members..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              leftIcon={
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              }
+              leftIcon={<Search className="w-5 h-5" />}
             />
           </div>
           {/* BUG:BZ-094 - Filter change fires parallel request without cancelling debounced one */}
@@ -280,14 +278,7 @@ export function SearchPage() {
         <div className="space-y-6">
           {results.length === 0 ? (
             <div className="text-center py-12">
-              <svg
-                className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <Search className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
               <p className="text-gray-500 dark:text-gray-400">No results found for "{query}"</p>
             </div>
           ) : (
@@ -306,10 +297,10 @@ export function SearchPage() {
                       {isProject(item) && (
                         <>
                           <div
-                            className="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+                            className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                             style={{ backgroundColor: `${item.color}20`, color: item.color }}
                           >
-                            {item.icon}
+                            {getProjectIcon(item.icon)}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-gray-900 dark:text-white truncate">
@@ -328,9 +319,7 @@ export function SearchPage() {
                       {isTask(item) && (
                         <>
                           <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                            <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
+                            <ClipboardList className="w-5 h-5 text-gray-500" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-gray-900 dark:text-white truncate">
@@ -372,14 +361,7 @@ export function SearchPage() {
       {/* Quick Tips */}
       {!query && recentSearches.length === 0 && (
         <div className="text-center py-12">
-          <svg
-            className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+          <Search className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
           <p className="text-gray-500 dark:text-gray-400 mb-2">
             Search for projects, tasks, or team members
           </p>
