@@ -16,6 +16,21 @@ export function Layout() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
+  // BUG:BZ-027 - Route guard flashes protected content before redirect
+  // Auth check is deferred by a short timeout, allowing the protected dashboard
+  // content to render for ~200ms before the redirect to login fires.
+  // Should check auth synchronously before rendering, but the async check
+  // creates a visible flash of sensitive content.
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    // Simulate async auth verification (e.g., token validation against server)
+    const timer = setTimeout(() => {
+      setAuthChecked(true);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, []);
+
   // BUG:BZ-030 - Concurrent route transitions cause white screen
   // Rapidly clicking between nav items increments a transition counter.
   // When multiple transitions overlap (counter > 1), the component sets an error
@@ -64,8 +79,24 @@ export function Layout() {
   // BUG:BZ-025 - Infinite redirect loop on expired session
   // Auth guard checks for expired token and redirects to /login, but login page
   // detects the stale token and redirects back, creating an infinite loop
+  // BUG:BZ-027 - Route guard flashes protected content before redirect
+  // The auth check waits for authChecked (async verification), so protected content
+  // renders for ~200ms before the redirect fires. This exposes sensitive dashboard
+  // data briefly to unauthenticated users.
   useEffect(() => {
+    if (!authChecked) return; // Wait for async auth check — content flashes during this window
     if (!isAuthenticated) {
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-027')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-027',
+            timestamp: Date.now(),
+            description: 'Protected route content flashed for ~200ms before auth redirect',
+            page: 'Navigation/Global'
+          });
+        }
+      }
       const session = localStorage.getItem('projecthub_session');
       if (session) {
         try {
@@ -97,7 +128,7 @@ export function Layout() {
       }
       navigate('/login');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authChecked, navigate]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -269,6 +300,62 @@ export function Layout() {
     }
   }, [location.pathname]);
 
+  // BUG:BZ-035 - Navigation cancel doesn't abort pending requests
+  // When the user navigates away before a page data fetch completes, the stale
+  // response still writes to the shared pageData state, overwriting the new page's data.
+  // Should use AbortController to cancel in-flight requests on navigation, but doesn't.
+  const [pageData, setPageData] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchPageData = async () => {
+      const currentPath = location.pathname;
+      // Simulate a network request with variable latency per route
+      const delay = currentPath.includes('dashboard') ? 1500
+        : currentPath.includes('projects') ? 2000
+        : currentPath.includes('team') ? 1200
+        : 800;
+
+      await new Promise(resolve => setTimeout(resolve, delay));
+
+      // Bug: does NOT check if the navigation has changed since the fetch started.
+      // A proper implementation would use AbortController or check `cancelled`.
+      // Instead, we only check the local `cancelled` flag for cleanup but never set it,
+      // so stale data always overwrites the current page's data.
+      if (!cancelled) {
+        setPageData({ route: currentPath, fetchedAt: Date.now() });
+
+        // Detect when stale data overwrites: if by the time we set data, the path has changed
+        if (currentPath !== window.location.pathname.replace(/\/$/, '')) {
+          if (typeof window !== 'undefined') {
+            window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+            if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-035')) {
+              window.__PERCEPTR_TEST_BUGS__.push({
+                bugId: 'BZ-035',
+                timestamp: Date.now(),
+                description: 'Navigation cancel did not abort pending request - stale data overwrote new page data',
+                page: 'Navigation/Global'
+              });
+            }
+          }
+        }
+      }
+    };
+
+    fetchPageData();
+
+    // Bug: cleanup sets cancelled = true but fetch doesn't use AbortController,
+    // so the async operation still completes and calls setPageData.
+    // The `cancelled` variable is captured in closure but the check above
+    // uses a separate code path that doesn't properly gate the state update.
+    return () => {
+      // This looks correct but the fetch completion callback above doesn't
+      // actually honor this flag consistently due to the async timing
+      cancelled = false; // Bug: should be `cancelled = true` to properly cancel
+    };
+  }, [location.pathname]);
+
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -334,7 +421,8 @@ export function Layout() {
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
+    // BUG:BZ-027 - Protected content renders before auth check completes
+    <div data-bug-id="BZ-027" className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
       <Sidebar
         isCollapsed={isSidebarCollapsed}
         isMobileOpen={isMobileSidebarOpen}
@@ -346,6 +434,67 @@ export function Layout() {
           onMenuClick={handleMenuClick}
           isSidebarCollapsed={isSidebarCollapsed}
         />
+
+        {/* BUG:BZ-028 - Breadcrumb trail doesn't match actual path */}
+        {/* Breadcrumbs are derived from a hardcoded mapping instead of the actual URL,
+            so they show incorrect hierarchy for many routes. E.g., /settings shows
+            "Home > Projects > Settings" even though it's a top-level route. */}
+        <nav data-bug-id="BZ-028" className="px-4 lg:px-6 py-2 text-sm text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700/50 bg-white dark:bg-gray-800" aria-label="Breadcrumb">
+          {(() => {
+            // Bug: Breadcrumb mapping is hardcoded and doesn't match URL hierarchy
+            // Should derive breadcrumbs from the actual route segments, but instead
+            // uses a static lookup that returns wrong parent paths
+            const breadcrumbMap: Record<string, string[]> = {
+              '/dashboard': ['Home', 'Dashboard'],
+              '/projects': ['Home', 'Projects'],
+              '/team': ['Home', 'Projects', 'Team'],           // Wrong: Team is not under Projects
+              '/settings': ['Home', 'Projects', 'Settings'],   // Wrong: Settings is not under Projects
+              '/search': ['Home', 'Dashboard', 'Search'],      // Wrong: Search is not under Dashboard
+            };
+
+            // Find matching route (use prefix match for nested routes)
+            const matchedPath = Object.keys(breadcrumbMap).find(path =>
+              location.pathname.startsWith(path)
+            ) || '/dashboard';
+
+            const crumbs = breadcrumbMap[matchedPath] || ['Home'];
+
+            // Log the bug when breadcrumbs don't match the actual URL hierarchy
+            const actualSegments = location.pathname.split('/').filter(Boolean);
+            const expectedParent = actualSegments[0] || 'dashboard';
+            const breadcrumbParent = (crumbs[1] || '').toLowerCase();
+            if (breadcrumbParent && breadcrumbParent !== expectedParent && crumbs.length > 2) {
+              if (typeof window !== 'undefined') {
+                window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-028')) {
+                  window.__PERCEPTR_TEST_BUGS__.push({
+                    bugId: 'BZ-028',
+                    timestamp: Date.now(),
+                    description: 'Breadcrumb trail does not match actual URL path - hardcoded mapping shows wrong hierarchy',
+                    page: 'Navigation/Global'
+                  });
+                }
+              }
+            }
+
+            return (
+              <ol className="flex items-center gap-1">
+                {crumbs.map((crumb, idx) => (
+                  <li key={idx} className="flex items-center">
+                    {idx > 0 && (
+                      <svg className="w-4 h-4 mx-1 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    )}
+                    <span className={idx === crumbs.length - 1 ? 'text-gray-900 dark:text-gray-200 font-medium' : ''}>
+                      {crumb}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            );
+          })()}
+        </nav>
 
         {/* BUG:BZ-024 - Query params stripped on navigation */}
         {/* BUG:BZ-033 - Scroll position not restored on back navigation */}
@@ -360,7 +509,10 @@ export function Layout() {
                 <div data-bug-id="BZ-034">
                   {/* BUG:BZ-033 - Scroll position reset on every navigation */}
                   <div data-bug-id="BZ-033">
-                    <Outlet context={{ appFilterState, pageTitle: currentPageTitle }} />
+                    {/* BUG:BZ-035 - Stale fetch data not aborted on navigation */}
+                    <div data-bug-id="BZ-035">
+                      <Outlet context={{ appFilterState, pageTitle: currentPageTitle, pageData }} />
+                    </div>
                   </div>
                 </div>
               </div>
