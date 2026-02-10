@@ -5,6 +5,7 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Avatar } from '../components/Avatar';
 import { Card } from '../components/Card';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 type Tab = 'profile' | 'notifications' | 'integrations' | 'appearance';
 
@@ -83,15 +84,33 @@ export function SettingsPage() {
     }
   };
 
+  // BUG:BZ-084 - FOUC on theme toggle — removes old class immediately but defers
+  // applying new class, causing a single frame of un-styled content (white flash)
   const toggleDarkMode = () => {
     const newIsDark = !isDark;
     setIsDark(newIsDark);
+    // Remove the current theme class immediately
+    document.documentElement.classList.remove('dark');
     if (newIsDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+      // Defer adding 'dark' by two animation frames, causing a white flash
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.documentElement.classList.add('dark');
+        });
+      });
+    }
+    localStorage.setItem('theme', newIsDark ? 'dark' : 'light');
+
+    if (typeof window !== 'undefined') {
+      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+      if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-084')) {
+        window.__PERCEPTR_TEST_BUGS__.push({
+          bugId: 'BZ-084',
+          timestamp: Date.now(),
+          description: 'Theme toggle causes FOUC - class removed before new class applied, creating white flash',
+          page: 'Visual/Layout'
+        });
+      }
     }
   };
 
@@ -576,7 +595,7 @@ export function SettingsPage() {
             </div>
           )}
 
-          {/* Appearance Tab */}
+          {/* Appearance Tab — BZ-084: FOUC on theme toggle */}
           {activeTab === 'appearance' && (
             <Card>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
@@ -587,9 +606,11 @@ export function SettingsPage() {
                   <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
                     Theme
                   </h3>
-                  <div className="flex gap-4">
+                  {/* BUG:BZ-084 - Both the card buttons and the toggle use toggleDarkMode
+                      which removes the class before applying, causing FOUC */}
+                  <div data-bug-id="BZ-084" className="flex gap-4">
                     <button
-                      onClick={() => { setIsDark(false); document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); }}
+                      onClick={() => { if (isDark) toggleDarkMode(); }}
                       className={`
                         flex-1 p-4 rounded-lg border-2 transition-colors
                         ${!isDark ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'}
@@ -599,7 +620,7 @@ export function SettingsPage() {
                       <p className="text-sm font-medium text-gray-900 dark:text-white">Light</p>
                     </button>
                     <button
-                      onClick={() => { setIsDark(true); document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); }}
+                      onClick={() => { if (!isDark) toggleDarkMode(); }}
                       className={`
                         flex-1 p-4 rounded-lg border-2 transition-colors
                         ${isDark ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'}
@@ -608,6 +629,15 @@ export function SettingsPage() {
                       <div className="w-full h-20 bg-gray-900 rounded-lg border border-gray-700 mb-2" />
                       <p className="text-sm font-medium text-gray-900 dark:text-white">Dark</p>
                     </button>
+                  </div>
+                </div>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Dark Mode</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Toggle dark mode on or off</p>
+                    </div>
+                    <ThemeToggle />
                   </div>
                 </div>
               </div>

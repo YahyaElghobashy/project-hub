@@ -22,9 +22,12 @@ export function TopBar({ onMenuClick, isSidebarCollapsed }: TopBarProps) {
   return (
     <header data-bug-id="BZ-075" className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-40">
       <div className="flex items-center gap-4">
+        {/* BUG:BZ-078 - Responsive breakpoint gap: hamburger hidden at md (768px) but
+            sidebar only shows at lg (1024px), leaving a gap at 768-1023px where
+            neither the hamburger nor the sidebar is visible */}
         <button
           onClick={onMenuClick}
-          className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 lg:hidden"
+          className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 md:hidden"
         >
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />

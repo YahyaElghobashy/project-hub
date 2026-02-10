@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 interface SidebarProps {
@@ -54,6 +54,36 @@ export function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }: SidebarPro
   // useState initializer only runs once, so activeTab stays as the initial pathname
   const [activeTab] = useState(location.pathname);
 
+  // BUG:BZ-078 - Responsive breakpoint gap at exactly 768px
+  // At 768px (iPad portrait), neither mobile layout nor desktop layout applies properly.
+  // Mobile hamburger menu is hidden at md (768px+), but desktop sidebar only shows at lg (1024px).
+  // This leaves a 768-1023px gap where the sidebar is invisible and the hamburger is hidden.
+  useEffect(() => {
+    const checkBreakpointGap = () => {
+      const width = window.innerWidth;
+      // At exactly 768px-1023px, the sidebar is translated off-screen (mobile default)
+      // but the hamburger menu button is also hidden (it's only shown below lg)
+      // The lg:static and lg:translate-x-0 only kick in at 1024px+
+      if (width >= 768 && width < 1024 && !isMobileOpen) {
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-078')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-078',
+              timestamp: Date.now(),
+              description: 'Responsive breakpoint gap at 768px - navigation inaccessible between md and lg breakpoints',
+              page: 'Visual/Layout'
+            });
+          }
+        }
+      }
+    };
+
+    checkBreakpointGap();
+    window.addEventListener('resize', checkBreakpointGap);
+    return () => window.removeEventListener('resize', checkBreakpointGap);
+  }, [isMobileOpen]);
+
   return (
     <>
       {/* Mobile overlay */}
@@ -64,8 +94,12 @@ export function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }: SidebarPro
         />
       )}
 
-      {/* Sidebar */}
+      {/* BUG:BZ-078 - Responsive breakpoint gap: The sidebar uses lg: (1024px) for desktop
+          visibility, but the mobile hamburger menu is hidden at md: (768px+). At exactly
+          768px-1023px, the sidebar is off-screen and the hamburger is gone, leaving no
+          way to access navigation. Should use consistent breakpoints. */}
       <aside
+        data-bug-id="BZ-078"
         className={`
           fixed lg:static inset-y-0 left-0 z-50
           flex flex-col

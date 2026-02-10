@@ -6,6 +6,8 @@ import { useNotificationStore } from '../store/notificationStore';
 import { SummaryCard } from '../components/Card';
 import { Avatar } from '../components/Avatar';
 import { Badge } from '../components/Badge';
+import { ProjectCard, featuredProjects } from '../components/ProjectCard';
+import { StatsGrid, weeklyStats } from '../components/StatsGrid';
 
 interface TeamActivityItem {
   id: string;
@@ -555,6 +557,11 @@ export function DashboardPage() {
         )}
       </div>
 
+      {/* Weekly Stats — BZ-081: Grid with 33.33% columns + gap causes overflow */}
+      <div className="mt-6">
+        <StatsGrid items={weeklyStats} title="Weekly Stats" />
+      </div>
+
       {/* BUG:BZ-086 - Loading spinner never disappears */}
       <div data-bug-id="BZ-086" className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Team Activity</h2>
@@ -827,6 +834,31 @@ export function DashboardPage() {
               Next
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Featured Projects — BZ-076: Images cause layout shift when loading */}
+      <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Featured Projects</h2>
+          <button
+            onClick={() => navigate('/projects')}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            View all
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {featuredProjects.map((project, i) => (
+            <ProjectCard
+              key={i}
+              title={project.title}
+              description={project.description}
+              imageUrl={project.imageUrl}
+              category={project.category}
+              onClick={() => navigate('/projects')}
+            />
+          ))}
         </div>
       </div>
 

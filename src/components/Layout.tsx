@@ -369,6 +369,30 @@ export function Layout() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
 
+  // BUG:BZ-080 - Focus indicator invisible
+  // CSS globally removes outline on :focus but no custom focus indicator is added.
+  // Keyboard users can't see which element is focused. Log when Tab key is used.
+  useEffect(() => {
+    const handleTabKey = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-080')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-080',
+              timestamp: Date.now(),
+              description: 'Focus indicator invisible - outline:none applied globally without custom focus style',
+              page: 'Visual/Layout'
+            });
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleTabKey);
+    return () => window.removeEventListener('keydown', handleTabKey);
+  }, []);
+
   // BUG:BZ-075 - Sticky header covers content on anchor link scroll
   // Anchor link scroll-to uses element.scrollIntoView() without accounting for the
   // fixed 64px header. The target element scrolls to the very top of the viewport,
@@ -463,7 +487,8 @@ export function Layout() {
 
   return (
     // BUG:BZ-027 - Protected content renders before auth check completes
-    <div data-bug-id="BZ-027" className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
+    // BUG:BZ-080 - Focus indicator invisible (CSS removes outline globally)
+    <div data-bug-id="BZ-027" data-bug-id-080="BZ-080" className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
       <Sidebar
         isCollapsed={isSidebarCollapsed}
         isMobileOpen={isMobileSidebarOpen}

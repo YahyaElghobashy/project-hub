@@ -6,6 +6,14 @@ body {
   min-height: 100vh;
 }
 
+/* BUG:BZ-080 - Focus indicator invisible
+   Removes default browser focus outlines for a cleaner visual aesthetic,
+   but no custom focus indicator is provided as a replacement.
+   Keyboard users cannot see which element is currently focused. */
+*:focus {
+  outline: none;
+}
+
 /* Custom scrollbar for better UX */
 ::-webkit-scrollbar {
   width: 8px;
