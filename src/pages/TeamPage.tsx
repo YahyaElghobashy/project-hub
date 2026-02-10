@@ -8,6 +8,50 @@ import { Badge } from '../components/Badge';
 import { Modal } from '../components/Modal';
 import type { Role } from '../types';
 
+// BUG:BZ-068 - Invite link works after revocation due to cached validation
+// The invite token validation uses a cache layer that doesn't get cleared when
+// an invite is revoked. Cached approvals persist for up to 24 hours.
+const INVITE_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+interface CachedInviteValidation {
+  token: string;
+  email: string;
+  validatedAt: number;
+  isValid: boolean;
+}
+
+// Simulates a cached validation layer — entries remain valid even after
+// the underlying token is deleted from the database
+const inviteValidationCache: Map<string, CachedInviteValidation> = new Map();
+
+function validateInviteToken(token: string): { valid: boolean; cached: boolean } {
+  // Check cache first (bug: cache is not invalidated on revocation)
+  const cached = inviteValidationCache.get(token);
+  if (cached && (Date.now() - cached.validatedAt) < INVITE_CACHE_TTL_MS) {
+    return { valid: cached.isValid, cached: true };
+  }
+
+  // If not in cache, check "database" (in a real app, this would be an API call)
+  // After revocation, the token won't be in the DB, so this returns false
+  // But cached entries still return true above
+  return { valid: false, cached: false };
+}
+
+// BUG:BZ-069 - Password change doesn't invalidate other sessions
+// When user changes password, only the current session token is refreshed.
+// Other active sessions (on other devices/browsers) remain valid because
+// the session invalidation only clears the local token, not server-side sessions.
+interface ActiveSession {
+  sessionId: string;
+  device: string;
+  lastActive: string;
+  isCurrent: boolean;
+}
+
+function generateSessionId(): string {
+  return `sess_${Math.random().toString(36).substr(2, 12)}`;
+}
+
 // BUG:BZ-059 - Session expires without warning after 30 minutes
 // No refresh mechanism or warning dialog — user loses form data on silent redirect
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -21,6 +65,21 @@ export function TeamPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<Role>('member');
   const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
+
+  // BZ-068 — Invite link management state
+  const [inviteLinks, setInviteLinks] = useState<Array<{ token: string; email: string; createdAt: number; revoked: boolean }>>([]);
+  const [showInviteLinks, setShowInviteLinks] = useState(false);
+
+  // BZ-069 — Password change and session management state
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordChangeSuccess, setPasswordChangeSuccess] = useState(false);
+  const [activeSessions] = useState<ActiveSession[]>(() => [
+    { sessionId: generateSessionId(), device: 'Chrome on macOS (this device)', lastActive: new Date().toISOString(), isCurrent: true },
+    { sessionId: generateSessionId(), device: 'Safari on iPhone', lastActive: new Date(Date.now() - 3600000).toISOString(), isCurrent: false },
+    { sessionId: generateSessionId(), device: 'Firefox on Windows', lastActive: new Date(Date.now() - 7200000).toISOString(), isCurrent: false },
+  ]);
 
   // BUG:BZ-067 - JWT payload contains stale permissions after role change
   // Cache the current user's role from the initial JWT/session load.
@@ -193,8 +252,101 @@ export function TeamPage() {
     member.email.toLowerCase().includes(search.toLowerCase())
   );
 
+  // BUG:BZ-068 - Generate invite link and cache the validation result
+  const handleGenerateInviteLink = useCallback((email: string) => {
+    const token = `inv_${Math.random().toString(36).substr(2, 16)}`;
+    const link = { token, email, createdAt: Date.now(), revoked: false };
+    setInviteLinks(prev => [...prev, link]);
+
+    // Cache the token validation (this is the bug — cache isn't cleared on revoke)
+    inviteValidationCache.set(token, {
+      token,
+      email,
+      validatedAt: Date.now(),
+      isValid: true,
+    });
+
+    return token;
+  }, []);
+
+  // BUG:BZ-068 - Revoke invite link: marks as revoked in DB but doesn't clear cache
+  const handleRevokeInvite = useCallback((token: string) => {
+    setInviteLinks(prev =>
+      prev.map(link =>
+        link.token === token ? { ...link, revoked: true } : link
+      )
+    );
+
+    // BUG: We mark the invite as revoked in the "database" (local state),
+    // but we do NOT remove it from inviteValidationCache.
+    // The cached validation still returns { valid: true } for up to 24 hours.
+    // In production, this would be: DELETE FROM invites WHERE token = ?
+    // But the Redis/memcached layer still has the cached approval.
+
+    // Verify the bug: the cached validation still says valid
+    const result = validateInviteToken(token);
+    if (result.valid && result.cached) {
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-068')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-068',
+            timestamp: Date.now(),
+            description: 'Revoked invite link still valid due to cached validation layer',
+            page: 'Team'
+          });
+        }
+      }
+    }
+  }, []);
+
+  // BUG:BZ-069 - Password change handler that doesn't invalidate other sessions
+  const handlePasswordChange = useCallback(async () => {
+    if (!currentPassword || !newPassword) return;
+
+    // Simulate API call to change password
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // "Successfully" change password — but only refresh current session token.
+      // BUG: We do NOT invalidate other active sessions on the server.
+      // In a secure implementation, changing password should revoke all other
+      // session tokens, forcing re-authentication on other devices.
+      const currentSession = activeSessions.find(s => s.isCurrent);
+      if (currentSession) {
+        // Only update the current session's token
+        localStorage.setItem('projecthub_session_token', `new_token_${Date.now()}`);
+      }
+
+      // BUG: Other sessions (activeSessions where isCurrent === false)
+      // remain completely valid. No server-side session invalidation occurs.
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-069')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-069',
+            timestamp: Date.now(),
+            description: 'Password change did not invalidate other active sessions',
+            page: 'Team'
+          });
+        }
+      }
+
+      setPasswordChangeSuccess(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setTimeout(() => setPasswordChangeSuccess(false), 3000);
+    } catch {
+      // Handle error silently
+    }
+  }, [currentPassword, newPassword, activeSessions]);
+
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return;
+
+    // Generate an invite link token when inviting
+    handleGenerateInviteLink(inviteEmail);
+
     await inviteMember(inviteEmail, inviteRole);
     setInviteEmail('');
     setInviteRole('member');
@@ -380,6 +532,90 @@ export function TeamPage() {
         </div>
       </div>
 
+      {/* BUG:BZ-068 - Invite Links Management — cached validation persists after revocation */}
+      <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700" data-bug-id="BZ-068">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Pending Invite Links</h3>
+          <button
+            onClick={() => setShowInviteLinks(!showInviteLinks)}
+            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            {showInviteLinks ? 'Hide' : 'Show'} ({inviteLinks.length})
+          </button>
+        </div>
+        {showInviteLinks && (
+          <div className="space-y-2">
+            {inviteLinks.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                No invite links generated yet. Invite a member to create one.
+              </p>
+            ) : (
+              inviteLinks.map((link) => (
+                <div
+                  key={link.token}
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {link.email}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-mono truncate">
+                      /join?token={link.token}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    {link.revoked ? (
+                      <Badge variant="error">Revoked</Badge>
+                    ) : (
+                      <Badge variant="success">Active</Badge>
+                    )}
+                    {!link.revoked && (
+                      <button
+                        onClick={() => handleRevokeInvite(link.token)}
+                        className="text-xs text-red-600 dark:text-red-400 hover:underline"
+                      >
+                        Revoke
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* BUG:BZ-069 - Security section — password change doesn't invalidate other sessions */}
+      <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700" data-bug-id="BZ-069">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white">Security</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Manage your password and active sessions
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setShowSecurityModal(true)}>
+            Change Password
+          </Button>
+        </div>
+        <div className="mt-3">
+          <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Active Sessions</p>
+          <div className="space-y-2">
+            {activeSessions.map((session) => (
+              <div key={session.sessionId} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${session.isCurrent ? 'bg-green-500' : 'bg-gray-400'}`} />
+                  <span className="text-gray-700 dark:text-gray-300">{session.device}</span>
+                </div>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {session.isCurrent ? 'Current' : formatDate(session.lastActive)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Invite Modal */}
       <Modal
         isOpen={isInviteModalOpen}
@@ -437,6 +673,55 @@ export function TeamPage() {
             </Button>
             <Button variant="danger" onClick={handleRemove}>
               Remove
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* BUG:BZ-069 - Password change modal — doesn't invalidate other sessions */}
+      <Modal
+        isOpen={showSecurityModal}
+        onClose={() => {
+          setShowSecurityModal(false);
+          setCurrentPassword('');
+          setNewPassword('');
+          setPasswordChangeSuccess(false);
+        }}
+        title="Change Password"
+        size="sm"
+      >
+        <div className="space-y-4">
+          {passwordChangeSuccess && (
+            <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm">
+              Password changed successfully. You may need to sign in again on other devices.
+            </div>
+          )}
+          <Input
+            label="Current Password"
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            placeholder="Enter current password"
+          />
+          <Input
+            label="New Password"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="Enter new password"
+          />
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            For security, other active sessions should be signed out after changing your password.
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={() => setShowSecurityModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handlePasswordChange}
+              disabled={!currentPassword || !newPassword}
+            >
+              Update Password
             </Button>
           </div>
         </div>
