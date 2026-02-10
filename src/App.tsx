@@ -9,6 +9,7 @@ import { TeamPage } from './pages/TeamPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SearchPage } from './pages/SearchPage';
 import { PerformancePage } from './pages/PerformancePage';
+import { AsyncPage } from './pages/AsyncPage';
 import { ToastProvider } from './components/Toast';
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/performance" element={<PerformancePage />} />
+          <Route path="/activity" element={<AsyncPage />} />
         </Route>
 
         {/* Fallback */}

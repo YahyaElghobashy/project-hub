@@ -413,6 +413,89 @@ export const handlers = [
     return HttpResponse.json(body);
   }),
 
+  // ============ FEED ENDPOINT (Infinite Scroll) ============
+
+  http.get('/api/feed', async ({ request }) => {
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page') || '0');
+    const limit = parseInt(url.searchParams.get('limit') || '10');
+
+    // BUG:BZ-091 - Simulate intermittent API failure on page 5
+    // After the error, the infinite scroll listener is removed
+    if (page === 4) {
+      await delay(500);
+      return new HttpResponse(null, { status: 500 });
+    }
+
+    await delay(400);
+
+    const totalPages = 8;
+    const feedTitles = [
+      'Sprint retrospective summary', 'New deployment pipeline ready',
+      'Customer feedback analysis Q4', 'API rate limit changes',
+      'Database migration complete', 'Security patch released',
+      'Performance benchmarks updated', 'Team standup notes',
+      'Release candidate review', 'Infrastructure cost report',
+    ];
+    const categories = ['Engineering', 'Product', 'Design', 'Marketing', 'Operations'];
+
+    const items = Array.from({ length: limit }, (_, i) => ({
+      id: `feed-${page}-${i}`,
+      title: feedTitles[(page * limit + i) % feedTitles.length],
+      body: `Detailed update content for page ${page + 1}, item ${i + 1}. This contains relevant project information and status updates.`,
+      category: categories[Math.floor(Math.random() * categories.length)],
+      createdAt: new Date(Date.now() - (page * limit + i) * 300000).toISOString(),
+    }));
+
+    return HttpResponse.json({
+      items,
+      hasMore: page < totalPages - 1,
+      page,
+      totalPages,
+    });
+  }),
+
+  // ============ ORDER ENDPOINT (Retry/Duplicates) ============
+
+  http.post('/api/orders', async ({ request }) => {
+    const body = await request.json() as { product: string; quantity: number; total: number };
+
+    // BUG:BZ-090 - Simulate flaky network: first attempt takes very long (client may time out)
+    // Subsequent retries get a fast response, but the first attempt may have already succeeded
+    const orderCount = ((globalThis as Record<string, unknown>).__orderAttemptCount as number) || 0;
+    (globalThis as Record<string, unknown>).__orderAttemptCount = orderCount + 1;
+
+    if (orderCount % 4 === 0) {
+      // First attempt: slow response simulating a timeout scenario
+      await delay(2000);
+    } else {
+      await delay(200);
+    }
+
+    const order = {
+      id: generateId(),
+      product: body.product,
+      quantity: body.quantity,
+      total: body.total,
+      status: 'confirmed' as const,
+      createdAt: new Date().toISOString(),
+    };
+
+    return HttpResponse.json(order, { status: 201 });
+  }),
+
+  // ============ NOTES ENDPOINT (Auto-save) ============
+
+  http.post('/api/notes/save', async ({ request }) => {
+    await delay(300);
+    const body = await request.json() as { title: string; content: string };
+    return HttpResponse.json({
+      success: true,
+      savedAt: new Date().toISOString(),
+      title: body.title,
+    });
+  }),
+
   // ============ SEARCH ENDPOINT ============
 
   http.get('/api/search', async ({ request }) => {
