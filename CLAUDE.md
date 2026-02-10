@@ -109,30 +109,15 @@ Chunks 6-8 committed as `54a7f88`, chunks 9-11 committed as `5499d5b`.
 
 All 119 data-bug-id markers preserved. All 394 BUG:BZ- comments preserved. TypeScript compiles clean.
 
-### IN PROGRESS — Phase 4: Global Style Sweep (committed as `b417c64`)
+### DONE — Phase 4: Global Style Sweep (`b417c64` + `b192a15`)
 
-**DONE:**
-- Gray→zinc color palette swap: 618 occurrences across 27 files
-- Page-level dark backgrounds upgraded to `zinc-950` (Layout, Login, Signup, Performance)
-
-**REMAINING — do these 4 sub-tasks next:**
-
-| Sub-task | What to do |
-|----------|------------|
-| Shadows | `shadow-lg` → `shadow-md`, `shadow-xl` → `shadow-md` (use `sed -i '' 's/shadow-xl/shadow-md/g; s/shadow-lg/shadow-md/g'` across src/) |
-| Transitions | `duration-200` → `duration-150`, `duration-300` → `duration-150` (sed across src/) |
-| Focus rings | `focus:ring-2` → `focus-visible:ring-2 focus-visible:ring-offset-2` in input/button elements only (NOT in code comments or bug markers) |
-| Headings | Add `tracking-tight` to `text-2xl font-bold` and `text-xl font-bold` headings across pages |
-
-**BZ-080 preservation:** The global `*:focus { outline: none }` bug must stay. The
-`focus-visible` additions on individual components use a different pseudo-class and
-don't conflict.
-
-**Approach for remaining work:**
-- Shadows + transitions: bulk sed replacement (safe, purely mechanical)
-- Focus rings: sed `s/focus:ring-2/focus-visible:ring-2 focus-visible:ring-offset-2/g` across src/
-- Headings: grep for `text-2xl font-bold` and `text-xl font-bold`, add `tracking-tight` after `font-bold`
-- After all changes: verify TypeScript, bug markers, commit
+- Gray→zinc: 618 occurrences across 27 files
+- Page dark backgrounds: `zinc-950` (Layout, Login, Signup, Performance)
+- Shadows: `shadow-lg`/`shadow-xl` → `shadow-md` (11 occurrences)
+- Transitions: `duration-200`/`duration-300` → `duration-150` (11 occurrences)
+- Focus rings: `focus:ring-2` → `focus-visible:ring-2 focus-visible:ring-offset-2` (29 occurrences)
+- Headings: `tracking-tight` added to all 11 page h1 elements
+- BZ-080 global `*:focus { outline: none }` bug preserved (uses different pseudo-class)
 
 ### PENDING — Phase 5: Gradients
 
