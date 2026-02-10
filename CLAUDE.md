@@ -146,9 +146,13 @@ These bugs were not injected during the overnight automation:
 - **BZ-060** — OAuth Callback Loses Return URL
 - **BZ-061** — Remember Me Checkbox Does Nothing
 
-### LATER — Phase 8: Perceptr Web SDK Integration
+### DONE — Phase 8: Perceptr Web SDK Integration (`aeafb84`)
 
-Investigate and integrate the Perceptr Web SDK into the app.
+- Installed `@perceptr/web-sdk@0.0.24` (rrweb-based session recording + network monitoring)
+- `src/main.tsx`: `Perceptr.init()` + `Perceptr.start()` on app load
+- `src/components/Layout.tsx`: `Perceptr.identify()` when user authenticates
+- Config: `projectId: 'projecthub-bug-zoo'`, debug mode, network body capture, header sanitization
+- Also fixed infinite redirect loop (`bfe5778`): auth store restores session from localStorage
 
 ---
 
