@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
 declare global {
@@ -81,6 +81,28 @@ export function Modal({
     }
   };
 
+  // BUG:BZ-071 - Modal overflow hidden on mobile — content uses max-height with overflow-hidden
+  // instead of overflow-auto, so on small viewports the bottom content and buttons are cut off
+  const logMobileOverflow = useCallback(() => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 640) {
+      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+      if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-071')) {
+        window.__PERCEPTR_TEST_BUGS__.push({
+          bugId: 'BZ-071',
+          timestamp: Date.now(),
+          description: 'Modal content overflow hidden on mobile - bottom buttons unreachable',
+          page: 'Visual/Layout'
+        });
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      logMobileOverflow();
+    }
+  }, [isOpen, logMobileOverflow]);
+
   if (!isOpen) return null;
 
   return createPortal(
@@ -90,9 +112,14 @@ export function Modal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       onClick={handleOverlayClick}
     >
+      {/* BUG:BZ-071 - Modal uses max-h-[80vh] with overflow-hidden instead of overflow-auto.
+          On mobile viewports (375px), long modal content extends below the visible area
+          with no scroll, making confirm buttons unreachable. */}
       <div
+        data-bug-id="BZ-071"
         className={`
           w-full ${sizeStyles[size]}
+          max-h-[80vh] overflow-hidden
           bg-white dark:bg-gray-800
           rounded-xl shadow-xl
           transform transition-all

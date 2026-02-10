@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { TruncatedText } from './TruncatedText';
 
 interface Column<T> {
   key: string;
@@ -111,7 +112,8 @@ export function Table<T extends Record<string, unknown>>({
                 onClick={() => column.sortable && handleSort(column.key)}
               >
                 <div className="flex items-center gap-1">
-                  {column.header}
+                  {/* BUG:BZ-074 - Column headers truncated to 15 chars with no tooltip */}
+                  <TruncatedText text={column.header} maxLength={15} className="whitespace-nowrap" />
                   {/* BUG:BZ-038 - Sort arrow points wrong direction (condition inverted) */}
                 {column.sortable && sortKey === column.key && (
                     <svg

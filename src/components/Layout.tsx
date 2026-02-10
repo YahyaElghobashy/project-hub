@@ -369,6 +369,47 @@ export function Layout() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
 
+  // BUG:BZ-075 - Sticky header covers content on anchor link scroll
+  // Anchor link scroll-to uses element.scrollIntoView() without accounting for the
+  // fixed 64px header. The target element scrolls to the very top of the viewport,
+  // hidden behind the sticky header. Should use scroll-margin-top or manual offset.
+  useEffect(() => {
+    const handleAnchorClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest('a[href^="#"]');
+      if (anchor) {
+        const href = anchor.getAttribute('href');
+        if (href && href.startsWith('#')) {
+          e.preventDefault();
+          const elementId = href.slice(1);
+          const element = document.getElementById(elementId);
+          if (element) {
+            // Bug: scrollIntoView doesn't account for the 64px fixed header
+            // The content scrolls right to the top of the viewport, hidden under the header
+            // Should use: element.scrollIntoView({ behavior: 'smooth' }) with CSS scroll-margin-top: 64px
+            // or manually calculate: window.scrollTo({ top: element.offsetTop - 64, behavior: 'smooth' })
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            if (typeof window !== 'undefined') {
+              window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+              if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-075')) {
+                window.__PERCEPTR_TEST_BUGS__.push({
+                  bugId: 'BZ-075',
+                  timestamp: Date.now(),
+                  description: 'Sticky header covers content on scroll - anchor link does not offset for 64px fixed header',
+                  page: 'Visual/Layout'
+                });
+              }
+            }
+          }
+        }
+      }
+    };
+
+    document.addEventListener('click', handleAnchorClick);
+    return () => document.removeEventListener('click', handleAnchorClick);
+  }, []);
+
   const handleMenuClick = () => {
     if (window.innerWidth < 1024) {
       setIsMobileSidebarOpen(!isMobileSidebarOpen);

@@ -8,9 +8,11 @@ import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import { TeamPage } from './pages/TeamPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SearchPage } from './pages/SearchPage';
+import { ToastProvider } from './components/Toast';
 
 function App() {
   return (
+    <ToastProvider>
     <BrowserRouter>
       <Routes>
         {/* Public routes */}
@@ -32,6 +34,7 @@ function App() {
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
+    </ToastProvider>
   );
 }
 

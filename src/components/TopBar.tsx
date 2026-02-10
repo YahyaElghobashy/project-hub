@@ -18,8 +18,9 @@ export function TopBar({ onMenuClick, isSidebarCollapsed }: TopBarProps) {
     navigate('/login');
   };
 
+  // BUG:BZ-075 - Fixed header is 64px tall but anchor scroll doesn't offset for it
   return (
-    <header className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 lg:px-6">
+    <header data-bug-id="BZ-075" className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-40">
       <div className="flex items-center gap-4">
         <button
           onClick={onMenuClick}
