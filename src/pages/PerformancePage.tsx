@@ -1,11 +1,58 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useProjectStore } from '../store/projectStore';
+import { useAuthStore } from '../store/authStore';
 
 // BUG:BZ-118 - Bundle includes unused libraries
 // Importing the entire lodash library (70KB+ gzipped) just to use _.capitalize
 // on a single label. Should use a native implementation or import only the
 // specific function: import capitalize from 'lodash/capitalize'
 import _ from 'lodash';
+
+// BUG:BZ-122 - Date Library Locale Import Bloats Bundle
+// Importing moment.js with ALL locales (~500KB) just to format a few timestamps.
+// The app only uses English but moment's default import pulls in all 100+ locales
+// because of dynamic require() usage. Should use date-fns or dayjs instead.
+import moment from 'moment';
+import 'moment/min/locales';
+
+// ---------- Preferences (used by several UI elements) ----------
+interface UserPreferences {
+  theme: 'light' | 'dark' | 'system';
+  compactMode: boolean;
+  refreshInterval: number;
+  visibleMetrics: string[];
+  defaultTimeRange: '1h' | '6h' | '24h' | '7d';
+  showServiceHealth: boolean;
+  showErrorLogs: boolean;
+  chartAnimations: boolean;
+}
+
+const DEFAULT_PREFERENCES: UserPreferences = {
+  theme: 'system',
+  compactMode: false,
+  refreshInterval: 5000,
+  visibleMetrics: ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'],
+  defaultTimeRange: '24h',
+  showServiceHealth: true,
+  showErrorLogs: true,
+  chartAnimations: true,
+};
+
+// BUG:BZ-121 - localStorage Parsed on Every Render
+// This function is called in the component body (not memoized) causing
+// JSON.parse(localStorage.getItem('preferences')) to execute on every
+// single render cycle. With 60fps re-renders, this adds ~40ms per frame.
+function getPreferences(): UserPreferences {
+  try {
+    const stored = localStorage.getItem('projecthub_preferences');
+    if (stored) {
+      return JSON.parse(stored) as UserPreferences;
+    }
+  } catch {
+    // Silently fall back to defaults
+  }
+  return DEFAULT_PREFERENCES;
+}
 
 // ---------- Types ----------
 interface PerformanceMetric {
@@ -216,7 +263,7 @@ function ResponseTimeTable({ data }: { data: ResponseTimeEntry[] }) {
   );
 }
 
-function ErrorLogList({ logs }: { logs: ErrorLogEntry[] }) {
+function ErrorLogList({ logs, formatTime }: { logs: ErrorLogEntry[]; formatTime?: (iso: string) => string }) {
   const levelStyles = {
     error: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
     warn: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
@@ -235,7 +282,7 @@ function ErrorLogList({ logs }: { logs: ErrorLogEntry[] }) {
             <div className="mt-1 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
               <span>{log.service}</span>
               <span>·</span>
-              <span>{new Date(log.timestamp).toLocaleTimeString()}</span>
+              <span>{formatTime ? formatTime(log.timestamp) : new Date(log.timestamp).toLocaleTimeString()}</span>
               {log.count > 1 && (
                 <>
                   <span>·</span>
@@ -253,6 +300,7 @@ function ErrorLogList({ logs }: { logs: ErrorLogEntry[] }) {
 // ---------- Main Page Component ----------
 export function PerformancePage() {
   const { projects } = useProjectStore();
+  const { user } = useAuthStore();
   const [metrics] = useState(generateMetrics);
   const [responseTimes] = useState(generateResponseTimes);
   const [errorLogs] = useState(generateErrorLogs);
@@ -260,6 +308,70 @@ export function PerformancePage() {
   const [pollingData, setPollingData] = useState<{ timestamp: number; count: number }[]>([]);
   const [selectedTimeRange, setSelectedTimeRange] = useState<'1h' | '6h' | '24h' | '7d'>('24h');
   const renderCountRef = useRef(0);
+  const [alertCount, setAlertCount] = useState(0);
+
+  // BUG:BZ-121 - localStorage Parsed on Every Render
+  // getPreferences() calls JSON.parse(localStorage.getItem(...)) in the component
+  // body — NOT inside a useMemo or useState initializer. This runs on every render
+  // cycle, adding unnecessary parsing overhead on each frame.
+  const preferences = getPreferences();
+
+  // Log BZ-121 when preferences are parsed on render (after first render)
+  if (renderCountRef.current > 0 && typeof window !== 'undefined') {
+    window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+    if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-121')) {
+      window.__PERCEPTR_TEST_BUGS__.push({
+        bugId: 'BZ-121',
+        timestamp: Date.now(),
+        description: 'localStorage parsed on every render cycle via JSON.parse - should be cached/memoized',
+        page: 'Performance'
+      });
+    }
+  }
+
+  // BUG:BZ-123 - Console.log Left in Production
+  // Developer left a console.log that dumps the full user object (including
+  // sensitive data like tokens) on every render. This is both a performance
+  // drag and a security concern.
+  // eslint-disable-next-line no-console
+  console.log('PerformancePage user context:', user, { preferences, selectedTimeRange });
+  if (typeof window !== 'undefined') {
+    window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+    if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-123')) {
+      window.__PERCEPTR_TEST_BUGS__.push({
+        bugId: 'BZ-123',
+        timestamp: Date.now(),
+        description: 'console.log left in production code - logs user data including tokens on every render',
+        page: 'Performance'
+      });
+    }
+  }
+
+  // BUG:BZ-124 - useEffect Runs on Every Render
+  // Missing dependency array causes this effect to run on every render.
+  // It fetches "alert" data from the API, then sets state, which triggers
+  // a re-render, which triggers the effect again — creating an infinite loop
+  // only throttled by React batching.
+  useEffect(() => {
+    fetch('/api/performance/alerts')
+      .then(res => res.ok ? res.json() : { count: Math.floor(Math.random() * 5) + 1 })
+      .catch(() => ({ count: Math.floor(Math.random() * 5) + 1 }))
+      .then(data => {
+        setAlertCount(data.count ?? 0);
+      });
+
+    if (typeof window !== 'undefined') {
+      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+      if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-124')) {
+        window.__PERCEPTR_TEST_BUGS__.push({
+          bugId: 'BZ-124',
+          timestamp: Date.now(),
+          description: 'useEffect without dependency array - fetches API on every render causing infinite loop',
+          page: 'Performance'
+        });
+      }
+    }
+  }); // BUG: Missing dependency array — should be useEffect(() => { ... }, [])
 
   // BUG:BZ-100 - Event Listener Leak Causes Exponential Slowdown
   // Each render adds a new window resize listener without removing the previous one.
@@ -330,15 +442,33 @@ export function PerformancePage() {
     setLiveValue(data.value);
   }, []);
 
+  // BUG:BZ-122 - Uses moment.js (with all locales imported) for trivial relative time formatting
+  // that could be done with a simple function or lightweight library like dayjs (~2KB vs ~500KB)
   const timeAgo = (iso: string) => {
-    const diff = Date.now() - new Date(iso).getTime();
-    if (diff < 60000) return `${Math.floor(diff / 1000)}s ago`;
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    return `${Math.floor(diff / 3600000)}h ago`;
+    return moment(iso).fromNow();
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    // BUG:BZ-125 - Font Loading Causes Invisible Text
+    // The 'InterDisplay' font uses font-display: block, which makes ALL text on
+    // this page invisible until the font file downloads. On slow 3G connections,
+    // text can be invisible for 3+ seconds while images and backgrounds load fine.
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900" style={{ fontFamily: "'InterDisplay', system-ui, sans-serif" }} data-bug-id="BZ-125">
+      {(() => {
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-125')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-125',
+              timestamp: Date.now(),
+              description: 'Custom font uses font-display: block causing invisible text on slow connections until font loads',
+              page: 'Performance'
+            });
+          }
+        }
+        return null;
+      })()}
+
       {/* BUG:BZ-098 - Memory leak component — subscribes on mount, never unsubscribes */}
       <div data-bug-id="BZ-098">
         <LiveMetricsStream onUpdate={handleStreamUpdate} />
@@ -346,11 +476,13 @@ export function PerformancePage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
-        <div className="flex items-center justify-between mb-8">
+        {/* BUG:BZ-121 - preferences object parsed from localStorage on every render */}
+        <div className="flex items-center justify-between mb-8" data-bug-id="BZ-121">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Performance Monitoring</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Real-time system health and performance metrics
+              {preferences.compactMode && ' (compact)'}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -374,6 +506,28 @@ export function PerformancePage() {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* BUG:BZ-122 - moment.js with ALL locales imported for trivial time formatting */}
+        {/* Last updated timestamp using moment.js (500KB+ with all locales) */}
+        <div className="flex items-center justify-end mb-2 text-xs text-gray-400 dark:text-gray-500" data-bug-id="BZ-122">
+          <span>Last synced: {moment().subtract(2, 'minutes').fromNow()}</span>
+          <span className="mx-2">·</span>
+          <span>Next refresh: {moment().add(preferences.refreshInterval / 1000, 'seconds').format('HH:mm:ss')}</span>
+          {(() => {
+            if (typeof window !== 'undefined') {
+              window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+              if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-122')) {
+                window.__PERCEPTR_TEST_BUGS__.push({
+                  bugId: 'BZ-122',
+                  timestamp: Date.now(),
+                  description: 'moment.js imported with ALL locales (~500KB) for trivial date formatting that could use native APIs',
+                  page: 'Performance'
+                });
+              }
+            }
+            return null;
+          })()}
         </div>
 
         {/* BUG:BZ-093 - Polling interval stacks — this section uses data from the buggy polling */}
@@ -463,8 +617,36 @@ export function PerformancePage() {
           </div>
         </div>
 
+        {/* BUG:BZ-124 - useEffect without dependency array fires fetchAlerts on every render */}
+        {/* Alert Summary — driven by the buggy useEffect that re-fetches every render */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-8" data-bug-id="BZ-124">
+          <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Active Alerts</h2>
+            <span className="text-xs px-2 py-1 bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 rounded-full font-medium">
+              {alertCount} active
+            </span>
+          </div>
+          <div className="p-5">
+            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 bg-red-500 rounded-full" />
+                <span>Critical: {Math.max(0, alertCount - 2)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 bg-yellow-500 rounded-full" />
+                <span>Warning: {Math.min(alertCount, 2)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 bg-blue-500 rounded-full" />
+                <span>Info: 0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* BUG:BZ-123 - console.log left in production, data logged on every render */}
         {/* Error Logs */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-8">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-8" data-bug-id="BZ-123">
           <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Errors & Warnings</h2>
             <span className="text-xs px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-full font-medium">
@@ -472,7 +654,7 @@ export function PerformancePage() {
             </span>
           </div>
           <div className="p-5">
-            <ErrorLogList logs={errorLogs} />
+            <ErrorLogList logs={errorLogs} formatTime={timeAgo} />
           </div>
         </div>
 
