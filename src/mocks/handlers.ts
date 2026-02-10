@@ -96,9 +96,27 @@ export const handlers = [
     return HttpResponse.json(mockUsers[index]);
   }),
 
+  // BUG:BZ-066 - Permission check only on frontend
+  // DELETE endpoint has no authorization check — any user (including viewers)
+  // can delete team members via direct API call. The UI hides the button for
+  // viewers, but the endpoint itself doesn't verify the caller's role.
   http.delete('/api/users/:id', async ({ params }) => {
     await delay(200);
+    // No role/permission check here — anyone can delete
     mockUsers = mockUsers.filter(u => u.id !== params.id);
+
+    if (typeof window !== 'undefined') {
+      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+      if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-066')) {
+        window.__PERCEPTR_TEST_BUGS__.push({
+          bugId: 'BZ-066',
+          timestamp: Date.now(),
+          description: 'Permission check only on frontend — DELETE endpoint has no auth check',
+          page: 'Team'
+        });
+      }
+    }
+
     return HttpResponse.json({ success: true });
   }),
 

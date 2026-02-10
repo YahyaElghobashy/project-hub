@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTeamStore } from '../store/teamStore';
+import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Avatar } from '../components/Avatar';
@@ -7,8 +8,13 @@ import { Badge } from '../components/Badge';
 import { Modal } from '../components/Modal';
 import type { Role } from '../types';
 
+// BUG:BZ-059 - Session expires without warning after 30 minutes
+// No refresh mechanism or warning dialog — user loses form data on silent redirect
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+
 export function TeamPage() {
   const { members, fetchMembers, inviteMember, updateMemberRole, removeMember, isLoading } = useTeamStore();
+  const { user: currentUser } = useAuthStore();
 
   const [search, setSearch] = useState('');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -16,9 +22,171 @@ export function TeamPage() {
   const [inviteRole, setInviteRole] = useState<Role>('member');
   const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
 
+  // BUG:BZ-067 - JWT payload contains stale permissions after role change
+  // Cache the current user's role from the initial JWT/session load.
+  // When the user's role is updated in the admin panel, this cached value
+  // is never refreshed — permissions remain stale until token expires.
+  const [cachedUserRole] = useState<Role>(() => {
+    const session = localStorage.getItem('projecthub_session');
+    if (session) {
+      try {
+        const parsed = JSON.parse(session);
+        return parsed.role || currentUser?.role || 'member';
+      } catch {
+        return currentUser?.role || 'member';
+      }
+    }
+    return currentUser?.role || 'member';
+  });
+
+  // BUG:BZ-063 - Token refresh race condition
+  // Track whether a token refresh is in progress to prevent concurrent refreshes
+  const isRefreshing = useRef(false);
+  const refreshPromise = useRef<Promise<boolean> | null>(null);
+
+  // Simulate token refresh — only the first concurrent call succeeds
+  const refreshToken = useCallback(async (): Promise<boolean> => {
+    if (refreshPromise.current) {
+      // Second concurrent refresh uses the same promise but it will fail
+      // because the token was already rotated by the first refresh
+      return refreshPromise.current;
+    }
+
+    refreshPromise.current = new Promise<boolean>((resolve) => {
+      if (isRefreshing.current) {
+        // BUG: Second refresh fails because token was already rotated
+        setTimeout(() => resolve(false), 100);
+        return;
+      }
+      isRefreshing.current = true;
+      setTimeout(() => {
+        isRefreshing.current = false;
+        refreshPromise.current = null;
+        resolve(true);
+      }, 200);
+    });
+
+    return refreshPromise.current;
+  }, []);
+
+  // BUG:BZ-063 - When multiple API calls detect expired token simultaneously,
+  // they each trigger refresh. First succeeds, second fails with 401.
+  const fetchWithTokenRefresh = useCallback(async (url: string, options?: RequestInit) => {
+    const response = await fetch(url, options);
+
+    if (response.status === 401) {
+      const refreshed = await refreshToken();
+      if (!refreshed) {
+        // BUG: Second concurrent call fails here
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-063')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-063',
+              timestamp: Date.now(),
+              description: 'Token refresh race condition — concurrent refresh failed',
+              page: 'Team'
+            });
+          }
+        }
+        throw new Error('Token refresh failed');
+      }
+      // Retry with new token
+      return fetch(url, options);
+    }
+
+    return response;
+  }, [refreshToken]);
+
+  // BUG:BZ-059 - Session timer that silently expires without any warning
+  useEffect(() => {
+    const sessionStart = Date.now();
+    const checkInterval = setInterval(() => {
+      const elapsed = Date.now() - sessionStart;
+      if (elapsed >= SESSION_TIMEOUT_MS) {
+        // Session expired — no warning shown, just redirect
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-059')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-059',
+              timestamp: Date.now(),
+              description: 'Session expired without warning — form data lost',
+              page: 'Team'
+            });
+          }
+        }
+        clearInterval(checkInterval);
+        window.location.href = '/login';
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(checkInterval);
+  }, []);
+
+  // BUG:BZ-062 - Multi-tab session conflict
+  // Store current session info in localStorage; other tabs may overwrite it
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('projecthub_active_session', JSON.stringify({
+        userId: currentUser.id,
+        role: currentUser.role,
+        name: currentUser.name,
+        timestamp: Date.now(),
+      }));
+    }
+
+    // Listen for storage events from other tabs
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'projecthub_active_session' && e.newValue) {
+        try {
+          const otherSession = JSON.parse(e.newValue);
+          // BUG: UI still shows current user's admin context, but localStorage
+          // now has the other tab's user. API calls will use the new session token
+          // from the other tab, causing a mismatch between UI and API identity.
+          if (otherSession.userId !== currentUser?.id) {
+            if (typeof window !== 'undefined') {
+              window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+              if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-062')) {
+                window.__PERCEPTR_TEST_BUGS__.push({
+                  bugId: 'BZ-062',
+                  timestamp: Date.now(),
+                  description: 'Multi-tab session conflict — UI shows one user, API uses another',
+                  page: 'Team'
+                });
+              }
+            }
+          }
+        } catch {
+          // Ignore parse errors
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [currentUser]);
+
   useEffect(() => {
     fetchMembers();
   }, [fetchMembers]);
+
+  // BUG:BZ-063 - Simulate concurrent API calls on mount that may race on token refresh
+  useEffect(() => {
+    // Fire multiple concurrent requests that could trigger simultaneous token refreshes
+    const loadTeamData = async () => {
+      try {
+        await Promise.all([
+          fetchWithTokenRefresh('/api/users'),
+          fetchWithTokenRefresh('/api/users'),
+          fetchWithTokenRefresh('/api/users'),
+        ]);
+      } catch {
+        // Some requests may fail due to race condition in token refresh
+      }
+    };
+    loadTeamData();
+  }, [fetchWithTokenRefresh]);
 
   const filteredMembers = members.filter((member) =>
     member.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -38,6 +206,35 @@ export function TeamPage() {
     await removeMember(memberToRemove);
     setMemberToRemove(null);
   };
+
+  // BUG:BZ-067 - Role change updates the member list but NOT the cached JWT payload
+  // The permissions encoded in the session token remain stale
+  const handleRoleChange = (memberId: string, newRole: Role) => {
+    updateMemberRole(memberId, newRole);
+
+    // Update UI state for the member in the list (this works correctly)
+    // However, if this user IS the current user, the JWT/session payload
+    // still contains the OLD role — cachedUserRole is never updated
+    if (memberId === currentUser?.id) {
+      // BUG: We update the member list but cachedUserRole remains stale
+      // The session token still grants old permissions until it expires
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-067')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-067',
+            timestamp: Date.now(),
+            description: 'JWT payload contains stale permissions — role change not reflected in token',
+            page: 'Team'
+          });
+        }
+      }
+    }
+  };
+
+  // BUG:BZ-066 - Permission check only on frontend
+  // Delete button hidden for viewers, but the API endpoint has no auth check
+  const canManageMembers = cachedUserRole === 'admin' || cachedUserRole === 'member';
 
   const getRoleBadgeVariant = (role: Role) => {
     switch (role) {
@@ -61,7 +258,8 @@ export function TeamPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8">
+    // BUG:BZ-059 - Session expiry wrapper
+    <div className="p-6 lg:p-8" data-bug-id="BZ-059">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
@@ -98,7 +296,7 @@ export function TeamPage() {
           <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700" data-bug-id="BZ-062">
           {filteredMembers.length === 0 ? (
             <div className="p-12 text-center text-gray-500 dark:text-gray-400">
               No team members found
@@ -120,10 +318,11 @@ export function TeamPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 ml-14 sm:ml-0">
+                {/* BUG:BZ-067 - Role dropdown updates member list but JWT payload keeps stale permissions */}
+                <div className="flex items-center gap-4 ml-14 sm:ml-0" data-bug-id="BZ-067">
                   <select
                     value={member.role}
-                    onChange={(e) => updateMemberRole(member.id, e.target.value as Role)}
+                    onChange={(e) => handleRoleChange(member.id, e.target.value as Role)}
                     className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="admin">Admin</option>
@@ -135,14 +334,20 @@ export function TeamPage() {
                     {member.role}
                   </Badge>
 
-                  <button
-                    onClick={() => setMemberToRemove(member.id)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                  {/* BUG:BZ-066 - Permission check only on frontend — delete button hidden
+                      for viewers but API endpoint /api/users/:id DELETE has no auth check.
+                      Anyone with the URL can still delete members via direct API call. */}
+                  {canManageMembers && (
+                    <button
+                      data-bug-id="BZ-066"
+                      onClick={() => setMemberToRemove(member.id)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </div>
             ))
@@ -181,7 +386,8 @@ export function TeamPage() {
         onClose={() => setIsInviteModalOpen(false)}
         title="Invite Team Member"
       >
-        <div className="space-y-4">
+        {/* BUG:BZ-063 - Token refresh race condition wrapper */}
+        <div className="space-y-4" data-bug-id="BZ-063">
           <Input
             label="Email Address"
             type="email"
