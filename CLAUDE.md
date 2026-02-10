@@ -96,46 +96,18 @@ aesthetic: Lucide vector icons, zinc color palette, subtle gradients.
   ProjectCard, Sidebar, Table, Toast, TopBar
 - All bug markers preserved
 
-### NEXT — Phase 3: Update Page Files (Chunks 6-11)
+### DONE — Phase 3: Update Page Files (Chunks 6-11)
 
-**None of the 11 page files have been touched yet.** This is the next phase to do.
-It's large, so split into sub-chunks:
+Chunks 6-8 committed as `54a7f88`, chunks 9-11 committed as `5499d5b`.
 
-**Chunk 6 — `LoginPage.tsx` + `SignupPage.tsx`**
-- Replace logo bolt, email, lock inline SVGs with Lucide components
-- Keep Google/GitHub brand SVGs as inline SVG (no Lucide equivalent)
-- Bugs to preserve: BZ-003, BZ-008, BZ-056, BZ-057, BZ-058, BZ-060, BZ-061, BZ-065, BZ-070
+**Chunk 6** — LoginPage + SignupPage: Lucide icons (Zap, Mail, Lock, Eye, EyeOff, AlertCircle)
+**Chunk 7** — DashboardPage: ~10 SVGs replaced, project icons via `getProjectIcon()`
+**Chunk 8** — ProjectsPage: SVGs replaced, project icons via `getProjectIcon()`
+**Chunk 9** — ProjectDetailPage: 15 SVG/emoji replacements (back, bell, search, copy, plus, undo, redo, X, check, command palette icons)
+**Chunk 10** — SettingsPage (tab emojis → User, Bell, Link2, Palette) + TeamPage (UserPlus, Search, Trash2)
+**Chunk 11** — SearchPage (empty states + task icon), PerformancePage (8 service emojis → Lucide, interface typed React.ReactNode), AsyncPage (trash, check, X), FormsPage (5 tab SVGs + upload/editor SVGs)
 
-**Chunk 7 — `DashboardPage.tsx`**
-- Replace ~10 inline SVGs with Lucide
-- Render `project.icon` via `getProjectIcon()` from `src/utils/iconMap.ts`
-- Bugs to preserve: BZ-036, BZ-037, BZ-040, BZ-050, BZ-051, BZ-053, BZ-055, BZ-086-088, BZ-119, BZ-120
-
-**Chunk 8 — `ProjectsPage.tsx`**
-- Replace inline SVGs with Lucide
-- Render `project.icon` via `getProjectIcon()`
-- Bugs to preserve: BZ-038-049, BZ-052, BZ-054, BZ-116
-
-**Chunk 9 — `ProjectDetailPage.tsx`** (largest file, ~1500+ lines)
-- Replace ~12 inline SVGs
-- Convert command palette emoji icons (settings, trash, back, bell) to Lucide JSX
-- Render project icon via `getProjectIcon()`
-- Bugs to preserve: BZ-011, BZ-019, BZ-101, BZ-102, BZ-104, BZ-106, BZ-107, BZ-109
-
-**Chunk 10 — `SettingsPage.tsx` + `TeamPage.tsx`**
-- Replace tab emojis (profile, bell, link, palette) with Lucide
-- Update tab `icon` field to use `React.ReactNode` (Lucide JSX)
-- Keep brand SVGs (Slack, GitHub, Jira) as inline SVG
-- Bugs to preserve: BZ-004, BZ-005, BZ-009, BZ-015-017, BZ-059, BZ-062, BZ-063, BZ-066-069
-
-**Chunk 11 — `SearchPage.tsx` + `PerformancePage.tsx` + `AsyncPage.tsx` + `FormsPage.tsx`**
-- SearchPage: render project icons via `getProjectIcon()`
-- PerformancePage: replace 8 service emojis with Lucide
-- AsyncPage + FormsPage: replace inline SVGs
-- Bugs to preserve: BZ-010, BZ-094, BZ-110, BZ-093, BZ-098, BZ-100, BZ-117, BZ-118, BZ-089-092, BZ-095-097, BZ-099
-
-**TIP:** Phase 3 is big. You may want to do chunks 6-8 in one session and chunks 9-11
-in another. Commit after each session.
+All 119 data-bug-id markers preserved. All 394 BUG:BZ- comments preserved. TypeScript compiles clean.
 
 ### PENDING — Phase 4: Global Style Sweep
 
