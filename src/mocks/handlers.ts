@@ -496,6 +496,82 @@ export const handlers = [
     });
   }),
 
+  // ============ RESOURCE ENDPOINTS (Optimistic Delete / Batch) ============
+
+  // BUG:BZ-096 - Resource delete with cascade (related items are permanently removed)
+  http.delete('/api/resources/:id', async () => {
+    await delay(300);
+    // Simulate cascade delete of related records (comments, attachments, links)
+    // Once deleted, these relations cannot be restored by re-creating the parent
+    return HttpResponse.json({ success: true, cascadeDeleted: true });
+  }),
+
+  // BUG:BZ-096 - Resource re-creation (undo) — item restored but without relations
+  http.post('/api/resources', async ({ request }) => {
+    await delay(400);
+    const body = await request.json() as { id: string; name: string; type: string; originalRelatedItems: number };
+
+    // BUG:BZ-096 - Server recreates the item but related records were cascade-deleted
+    // and cannot be restored. relatedItems returns 0 instead of the original count.
+    return HttpResponse.json({
+      id: body.id,
+      name: body.name,
+      type: body.type,
+      relatedItems: 0, // Cascade-deleted, can't restore
+      createdAt: new Date().toISOString(),
+    }, { status: 201 });
+  }),
+
+  // BUG:BZ-097 - Batch delete with partial failure
+  http.post('/api/resources/batch-delete', async ({ request }) => {
+    await delay(500);
+    const body = await request.json() as { ids: string[] };
+
+    // BUG:BZ-097 - Items with 'restricted' permission fail to delete
+    // but the response structure doesn't make this obvious to the client
+    const deleted: string[] = [];
+    const failed: { id: string; reason: string }[] = [];
+
+    for (const id of body.ids) {
+      // Items with even-numbered suffixes (batch-2, batch-4, etc.) or "restricted" items
+      // fail due to "insufficient permissions"
+      const num = parseInt(id.split('-')[1] || '0');
+      if (num === 2 || num === 5 || num === 7 || num === 10) {
+        failed.push({ id, reason: 'Insufficient permissions' });
+      } else {
+        deleted.push(id);
+      }
+    }
+
+    // Return 200 with both deleted and failed arrays
+    // The client only checks the status code and shows "success"
+    return HttpResponse.json({
+      deleted,
+      failed,
+      total: body.ids.length,
+    });
+  }),
+
+  // BUG:BZ-099 - Cached metrics endpoint (returns new API format)
+  http.get('/api/cached-metrics', async () => {
+    await delay(350);
+
+    // New API format (v2.5.0) — uses different field names than what the
+    // "cached" client JS (v2.3.1) expects
+    return HttpResponse.json({
+      apiVersion: 'v2.5.0',
+      // New format uses 'metrics' array with 'label', 'value', 'percentChange'
+      // Old cached JS expects 'stats' array with 'name', 'count', 'delta'
+      metrics: [
+        { label: 'Active Users', value: 12847, percentChange: 8.3 },
+        { label: 'API Requests', value: 584920, percentChange: -2.1 },
+        { label: 'Error Rate', value: 0.42, percentChange: -15.7 },
+        { label: 'Avg Response', value: 234, percentChange: 3.2 },
+      ],
+      updatedAt: new Date().toISOString(),
+    });
+  }),
+
   // ============ SEARCH ENDPOINT ============
 
   http.get('/api/search', async ({ request }) => {

@@ -118,6 +118,19 @@ export function AsyncPage() {
         {/* BZ-095: WebSocket Reconnect Loses Subscription */}
         <LiveUpdatesPanel />
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {/* BZ-096: Optimistic Delete Can't Undo */}
+        <OptimisticDeleteList />
+
+        {/* BZ-097: Batch Operation Partial Failure Unclear */}
+        <BatchOperationPanel />
+      </div>
+
+      {/* BZ-099: Service Worker Serves Stale Assets */}
+      <div className="mt-6">
+        <CachedDataDisplay />
+      </div>
     </div>
   );
 }
@@ -784,6 +797,532 @@ function LiveUpdatesPanel() {
             ))
           )}
         </div>
+      </Card>
+    </div>
+  );
+}
+
+// ============ BZ-096: OPTIMISTIC DELETE CAN'T UNDO ============
+
+interface ResourceItem {
+  id: string;
+  name: string;
+  type: 'document' | 'task' | 'comment';
+  relatedItems: number;
+  createdAt: string;
+}
+
+// BUG:BZ-096 - Optimistic Delete Can't Undo
+// Deleting an item removes it optimistically from the UI and immediately hits the API.
+// The API cascade-deletes related records. The "Undo" button tries to recreate the item,
+// but the cascade-deleted relations can't be restored, resulting in a partial restore.
+function OptimisticDeleteList() {
+  const [items, setItems] = useState<ResourceItem[]>(() => [
+    { id: 'res-1', name: 'Q4 Planning Document', type: 'document', relatedItems: 5, createdAt: new Date(Date.now() - 86400000 * 3).toISOString() },
+    { id: 'res-2', name: 'API Integration Task', type: 'task', relatedItems: 3, createdAt: new Date(Date.now() - 86400000 * 7).toISOString() },
+    { id: 'res-3', name: 'Review feedback thread', type: 'comment', relatedItems: 8, createdAt: new Date(Date.now() - 86400000 * 1).toISOString() },
+    { id: 'res-4', name: 'Sprint Retro Notes', type: 'document', relatedItems: 2, createdAt: new Date(Date.now() - 86400000 * 14).toISOString() },
+    { id: 'res-5', name: 'Deploy checklist', type: 'task', relatedItems: 4, createdAt: new Date(Date.now() - 86400000 * 5).toISOString() },
+  ]);
+
+  const [undoItem, setUndoItem] = useState<ResourceItem | null>(null);
+  const [undoStatus, setUndoStatus] = useState<'idle' | 'available' | 'restoring' | 'partial'>('idle');
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleDelete = useCallback(async (item: ResourceItem) => {
+    // Optimistically remove from UI
+    setItems(prev => prev.filter(i => i.id !== item.id));
+    setUndoItem(item);
+    setUndoStatus('available');
+
+    // Clear any existing undo timer
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+    }
+
+    // BUG:BZ-096 - Immediately send delete to API while showing undo option.
+    // The API cascade-deletes related records (comments, attachments, links).
+    // When the user clicks "Undo," the item can be recreated but the cascade-deleted
+    // relations are gone forever, resulting in a broken/partial restore.
+    try {
+      await fetch(`/api/resources/${item.id}`, { method: 'DELETE' });
+    } catch {
+      // Silently fail — item is already removed from UI
+    }
+
+    // Auto-dismiss undo after 5 seconds
+    undoTimerRef.current = setTimeout(() => {
+      setUndoItem(null);
+      setUndoStatus('idle');
+    }, 5000);
+  }, []);
+
+  const handleUndo = useCallback(async () => {
+    if (!undoItem) return;
+
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+    }
+
+    setUndoStatus('restoring');
+
+    try {
+      // BUG:BZ-096 - Undo tries to recreate the item via POST, but the API returns
+      // the item without its related records (which were cascade-deleted).
+      // The restore "succeeds" but relatedItems is now 0 instead of the original count.
+      const response = await fetch('/api/resources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: undoItem.id,
+          name: undoItem.name,
+          type: undoItem.type,
+          originalRelatedItems: undoItem.relatedItems,
+        }),
+      });
+
+      const restored = await response.json();
+
+      // Item is restored but with relatedItems = 0 (cascade-deleted relations are gone)
+      setItems(prev => [...prev, restored].sort((a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      ));
+      setUndoStatus('partial');
+
+      // BUG:BZ-096 - Log the bug when undo results in partial restore
+      if (restored.relatedItems < undoItem.relatedItems) {
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-096')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-096',
+              timestamp: Date.now(),
+              description: `Optimistic delete undo resulted in partial restore: ${undoItem.relatedItems} related items lost due to cascade deletion`,
+              page: 'Async/Loading',
+            });
+          }
+        }
+      }
+
+      setTimeout(() => setUndoStatus('idle'), 3000);
+    } catch {
+      // Undo completely failed
+      setUndoStatus('idle');
+    }
+
+    setUndoItem(null);
+  }, [undoItem]);
+
+  const typeIcons: Record<string, string> = {
+    document: 'D',
+    task: 'T',
+    comment: 'C',
+  };
+
+  return (
+    <div data-bug-id="BZ-096">
+      <Card>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Resources</h2>
+
+        <div className="space-y-2">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                  {typeIcons[item.type]}
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{item.name}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    {item.relatedItems} linked items · {new Date(item.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleDelete(item)}
+                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                title="Delete"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          ))}
+          {items.length === 0 && (
+            <p className="text-center text-sm text-gray-400 py-4">No resources</p>
+          )}
+        </div>
+
+        {/* Undo bar */}
+        {undoStatus === 'available' && undoItem && (
+          <div className="mt-3 flex items-center justify-between p-2.5 bg-gray-800 dark:bg-gray-900 rounded-lg text-white">
+            <span className="text-sm">"{undoItem.name}" deleted</span>
+            <button
+              onClick={handleUndo}
+              className="text-sm font-medium text-blue-400 hover:text-blue-300 px-2"
+            >
+              Undo
+            </button>
+          </div>
+        )}
+        {undoStatus === 'restoring' && (
+          <div className="mt-3 flex items-center gap-2 p-2.5 bg-gray-100 dark:bg-gray-700 rounded-lg">
+            <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full" />
+            <span className="text-sm text-gray-600 dark:text-gray-300">Restoring...</span>
+          </div>
+        )}
+        {undoStatus === 'partial' && (
+          <div className="mt-3 p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <span className="text-sm text-green-700 dark:text-green-400">Item restored successfully</span>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+// ============ BZ-097: BATCH OPERATION PARTIAL FAILURE UNCLEAR ============
+
+interface BatchItem {
+  id: string;
+  name: string;
+  owner: string;
+  permission: 'full' | 'restricted';
+  status: 'active' | 'archived';
+}
+
+// BUG:BZ-097 - Batch Operation Partial Failure Unclear
+// When performing a batch delete, some items fail (permission error) but
+// the UI shows a generic "Delete successful!" toast. The user doesn't know
+// that 3 out of 10 items weren't actually deleted.
+function BatchOperationPanel() {
+  const [items, setItems] = useState<BatchItem[]>(() => [
+    { id: 'batch-1', name: 'User analytics report', owner: 'Sarah Chen', permission: 'full', status: 'active' },
+    { id: 'batch-2', name: 'Quarterly budget spreadsheet', owner: 'Finance Team', permission: 'restricted', status: 'active' },
+    { id: 'batch-3', name: 'Old marketing assets', owner: 'Alex Thompson', permission: 'full', status: 'archived' },
+    { id: 'batch-4', name: 'Legacy API documentation', owner: 'Engineering', permission: 'full', status: 'archived' },
+    { id: 'batch-5', name: 'Executive meeting notes', owner: 'Management', permission: 'restricted', status: 'active' },
+    { id: 'batch-6', name: 'Deprecated test fixtures', owner: 'QA Team', permission: 'full', status: 'archived' },
+    { id: 'batch-7', name: 'Confidential HR records', owner: 'HR Department', permission: 'restricted', status: 'active' },
+    { id: 'batch-8', name: 'Draft design mockups', owner: 'Priya Patel', permission: 'full', status: 'active' },
+    { id: 'batch-9', name: 'Release notes archive', owner: 'Mike Johnson', permission: 'full', status: 'archived' },
+    { id: 'batch-10', name: 'Vendor contract templates', owner: 'Legal', permission: 'restricted', status: 'active' },
+  ]);
+
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    if (selectedIds.size === items.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(items.map(i => i.id)));
+    }
+  }, [items, selectedIds.size]);
+
+  const handleBatchDelete = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch('/api/resources/batch-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+
+      const result = await response.json();
+
+      // BUG:BZ-097 - Only remove successfully deleted items from the list,
+      // but show a success toast regardless of partial failures.
+      // The user sees "Delete successful!" even though some items failed.
+      const deletedIds = new Set(result.deleted as string[]);
+      setItems(prev => prev.filter(i => !deletedIds.has(i.id)));
+      setSelectedIds(new Set());
+
+      // BUG:BZ-097 - Toast says success even when some deletions failed
+      // Should report: "7 of 10 deleted. 3 failed due to insufficient permissions."
+      // Instead shows generic success, hiding the partial failure.
+      setToastMessage({ type: 'success', text: `Delete successful! ${selectedIds.size} items removed.` });
+
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-097')) {
+          if (result.failed && result.failed.length > 0) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-097',
+              timestamp: Date.now(),
+              description: `Batch delete reported success but ${result.failed.length} items failed — user not informed of partial failure`,
+              page: 'Async/Loading',
+            });
+          }
+        }
+      }
+    } catch {
+      setToastMessage({ type: 'error', text: 'Failed to delete items. Please try again.' });
+    } finally {
+      setIsDeleting(false);
+      setTimeout(() => setToastMessage(null), 4000);
+    }
+  }, [selectedIds]);
+
+  return (
+    <div data-bug-id="BZ-097">
+      <Card>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">File Manager</h2>
+          {selectedIds.size > 0 && (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleBatchDelete}
+              isLoading={isDeleting}
+            >
+              Delete {selectedIds.size} items
+            </Button>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          {/* Select all header */}
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+            <input
+              type="checkbox"
+              checked={selectedIds.size === items.length && items.length > 0}
+              onChange={toggleSelectAll}
+              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select all'}
+            </span>
+          </div>
+
+          {/* Items list */}
+          <div className="max-h-72 overflow-y-auto">
+            {items.map((item) => (
+              <div
+                key={item.id}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors ${
+                  selectedIds.has(item.id)
+                    ? 'bg-blue-50 dark:bg-blue-900/20'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700/30'
+                }`}
+                onClick={() => toggleSelect(item.id)}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(item.id)}
+                  onChange={() => toggleSelect(item.id)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-900 dark:text-white truncate">{item.name}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{item.owner}</p>
+                </div>
+                {item.permission === 'restricted' && (
+                  <Badge variant="warning">Restricted</Badge>
+                )}
+                <Badge variant={item.status === 'active' ? 'success' : 'default'}>
+                  {item.status}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Inline toast */}
+        {toastMessage && (
+          <div className={`mt-3 p-2.5 rounded-lg text-sm flex items-center gap-2 ${
+            toastMessage.type === 'success'
+              ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
+              : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
+          }`}>
+            {toastMessage.type === 'success' ? (
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            )}
+            {toastMessage.text}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+// ============ BZ-099: SERVICE WORKER SERVES STALE ASSETS ============
+
+interface CachedApiData {
+  version: string;
+  metrics: Array<{ label: string; value: number | string; change?: string }>;
+  lastUpdated: string;
+}
+
+// BUG:BZ-099 - Service Worker Serves Stale Assets
+// Simulates the scenario where a service worker caches the JavaScript bundle.
+// After a "deployment," the API response format changes (new fields, restructured data),
+// but the cached JS still expects the old format. Data parsing silently fails or
+// shows incorrect values because the stale code can't handle the new response shape.
+function CachedDataDisplay() {
+  const [data, setData] = useState<CachedApiData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [cacheVersion, setCacheVersion] = useState('v2.3.1');
+  const [apiVersion, setApiVersion] = useState('');
+  const [parseErrors, setParseErrors] = useState<string[]>([]);
+
+  // Simulated "cached" parser that expects the old API format
+  // This represents stale JavaScript that was cached by a service worker
+  const parseApiResponse = useCallback((rawResponse: Record<string, unknown>): CachedApiData => {
+    const errors: string[] = [];
+
+    // BUG:BZ-099 - The cached JS expects the old format where metrics are in `data.stats`
+    // but the new API returns them in `data.metrics`. The stale parser falls back to
+    // empty arrays or undefined, silently producing wrong output.
+    const stats = (rawResponse.stats || rawResponse.metrics || []) as Array<Record<string, unknown>>;
+
+    const metrics = stats.map((stat) => {
+      // Old format: { name: string, count: number, delta: string }
+      // New format: { label: string, value: number, percentChange: number }
+      const label = (stat.name || stat.label || 'Unknown') as string;
+
+      // BUG: old code reads `count`, new API sends `value`
+      // When the cached JS reads `count` from the new response, it gets undefined
+      const value = stat.count !== undefined ? stat.count as number : stat.value as number;
+
+      // BUG: old code reads `delta` (string like "+5%"), new API sends `percentChange` (number like 5.0)
+      // Stale code tries to use `delta` which is undefined in the new format
+      const change = stat.delta as string | undefined;
+
+      if (stat.count === undefined && stat.value !== undefined) {
+        errors.push(`Field 'count' missing for "${label}", fell back to 'value'`);
+      }
+      if (stat.delta === undefined && stat.percentChange !== undefined) {
+        errors.push(`Field 'delta' missing for "${label}", change data lost`);
+      }
+
+      return { label, value, change };
+    });
+
+    setParseErrors(errors);
+
+    return {
+      version: (rawResponse.apiVersion || rawResponse.version || 'unknown') as string,
+      metrics,
+      lastUpdated: (rawResponse.updatedAt || rawResponse.lastUpdated || new Date().toISOString()) as string,
+    };
+  }, []);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/cached-metrics');
+      const rawData = await response.json();
+
+      setApiVersion(rawData.apiVersion || rawData.version || '');
+
+      // Parse using the "cached" (stale) parser
+      const parsed = parseApiResponse(rawData);
+      setData(parsed);
+
+      // BUG:BZ-099 - Log when the cached JS version doesn't match the API version
+      // This simulates the service worker serving stale assets
+      if (rawData.apiVersion && rawData.apiVersion !== cacheVersion) {
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-099')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-099',
+              timestamp: Date.now(),
+              description: `Service worker served stale JS (${cacheVersion}) against new API (${rawData.apiVersion}) — data parsing produced silent errors`,
+              page: 'Async/Loading',
+            });
+          }
+        }
+      }
+    } catch {
+      // Fetch error
+    } finally {
+      setLoading(false);
+    }
+  }, [cacheVersion, parseApiResponse]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return (
+    <div data-bug-id="BZ-099">
+      <Card>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">System Metrics</h2>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              Client: {cacheVersion}
+            </span>
+            {apiVersion && (
+              <span className="text-xs text-gray-400 dark:text-gray-500">
+                API: {apiVersion}
+              </span>
+            )}
+            <Button variant="outline" size="sm" onClick={fetchData}>
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin h-6 w-6 border-4 border-blue-600 border-t-transparent rounded-full" />
+          </div>
+        ) : data ? (
+          <div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {data.metrics.map((metric, index) => (
+                <div
+                  key={index}
+                  className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg"
+                >
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{metric.label}</p>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {metric.value !== undefined ? metric.value.toLocaleString() : '—'}
+                  </p>
+                  {/* BUG:BZ-099 - change is undefined because stale JS reads 'delta' but new API sends 'percentChange' */}
+                  <p className={`text-xs mt-0.5 ${metric.change ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
+                    {metric.change || 'No change data'}
+                  </p>
+                </div>
+              ))}
+            </div>
+            {data.lastUpdated && (
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">
+                Last updated: {new Date(data.lastUpdated).toLocaleString()}
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="text-center text-sm text-gray-400 py-8">Failed to load metrics</p>
+        )}
       </Card>
     </div>
   );
