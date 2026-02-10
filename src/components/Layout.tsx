@@ -508,6 +508,10 @@ export function Layout() {
   }, [currentPageTitle]);
 
   if (!user) {
+    // If not authenticated, let auth guard useEffect handle the redirect instead of spinning forever
+    if (authChecked && !isAuthenticated) {
+      return null;
+    }
     return (
       <div data-bug-id="BZ-025" className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
         <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />

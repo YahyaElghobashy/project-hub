@@ -17,20 +17,26 @@ if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-s
   document.documentElement.classList.add('dark');
 }
 
-// Initialize Perceptr SDK for session recording & bug detection
-Perceptr.init({
-  projectId: 'projecthub-bug-zoo',
-  debug: true,
-  env: 'dev',
-  network: {
-    captureRequestBody: true,
-    captureResponseBody: true,
-    sanitizeHeaders: ['authorization', 'cookie'],
-  },
-});
-Perceptr.start();
-
 enableMocking().then(() => {
+  // Initialize Perceptr SDK AFTER MSW so SDK validation requests are intercepted
+  try {
+    Perceptr.init({
+      projectId: 'projecthub-bug-zoo',
+      debug: true,
+      env: 'dev',
+      network: {
+        captureRequestBody: true,
+        captureResponseBody: true,
+        sanitizeHeaders: ['authorization', 'cookie'],
+      },
+    });
+    Perceptr.start().catch((e: unknown) =>
+      console.warn('Perceptr SDK start failed:', e)
+    );
+  } catch (e) {
+    console.warn('Perceptr SDK init failed:', e);
+  }
+
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <App />

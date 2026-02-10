@@ -23,6 +23,10 @@ function getInitialAuthState(): { user: User | null; isAuthenticated: boolean } 
       if (session.token && session.user) {
         return { user: session.user, isAuthenticated: true };
       }
+      // Clean up malformed entries (pre-fix format without user field)
+      if (session.token && !session.user) {
+        localStorage.removeItem('projecthub_session');
+      }
     }
   } catch { /* invalid JSON */ }
   return { user: null, isAuthenticated: false };
