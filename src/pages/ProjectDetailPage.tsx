@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProjectStore } from '../store/projectStore';
 import { useTeamStore } from '../store/teamStore';
+import { useNotificationStore } from '../store/notificationStore';
 import { Button } from '../components/Button';
 import { Badge, getStatusVariant, getPriorityVariant } from '../components/Badge';
 import { Avatar } from '../components/Avatar';
@@ -11,6 +12,46 @@ import { KanbanBoard } from '../components/KanbanBoard';
 import type { Task } from '../types';
 
 type Tab = 'board' | 'settings';
+
+// BUG:BZ-109 - Fuzzy search algorithm that breaks on exact matches
+// The scoring function penalizes consecutive matches too heavily,
+// causing full exact words to score lower than partial matches
+function fuzzyMatch(query: string, target: string): number {
+  const q = query.toLowerCase();
+  const t = target.toLowerCase();
+
+  if (q.length === 0) return 0;
+
+  let score = 0;
+  let qIdx = 0;
+  let consecutiveMatches = 0;
+
+  for (let tIdx = 0; tIdx < t.length && qIdx < q.length; tIdx++) {
+    if (t[tIdx] === q[qIdx]) {
+      qIdx++;
+      consecutiveMatches++;
+      // BUG:BZ-109 - Consecutive match penalty increases quadratically
+      // This makes longer exact matches score LOWER than short partial ones
+      score += 10 - (consecutiveMatches * consecutiveMatches * 0.8);
+    } else {
+      consecutiveMatches = 0;
+    }
+  }
+
+  // All characters must be found
+  if (qIdx < q.length) return -1;
+
+  return score;
+}
+
+// BUG:BZ-106 - Simulated version tracking for collaborative editing
+interface EditVersion {
+  field: string;
+  value: string;
+  editedBy: string;
+  version: number;
+  timestamp: number;
+}
 
 // BUG:BZ-019 - Autocomplete race condition: fast typing causes selection from stale result set
 interface AssigneeResult {
@@ -68,6 +109,21 @@ export function ProjectDetailPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showTagDropdown, setShowTagDropdown] = useState(false);
 
+  // BUG:BZ-106 - Collaborative edit conflict tracking
+  const editVersions = useRef<Record<string, EditVersion>>({});
+  const [lastSavedBy, setLastSavedBy] = useState<string | null>(null);
+  const [showConflictToast, setShowConflictToast] = useState(false);
+
+  // BUG:BZ-107 - Notification panel state for project activity
+  const { notifications, fetchNotifications, markAllAsRead, unreadCount } = useNotificationStore();
+  const [showActivityPanel, setShowActivityPanel] = useState(false);
+  const activityPanelRef = useRef<HTMLDivElement>(null);
+
+  // BUG:BZ-109 - Command palette for quick task/action search
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [commandQuery, setCommandQuery] = useState('');
+  const commandInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (id) {
       fetchProject(id);
@@ -75,6 +131,159 @@ export function ProjectDetailPage() {
       fetchMembers();
     }
   }, [id, fetchProject, fetchTasks, fetchMembers]);
+
+  // BUG:BZ-106 - Simulate collaborative editing with version tracking
+  // When user edits a project field, simulate another user editing concurrently
+  const handleCollaborativeEdit = useCallback((field: string, value: string) => {
+    if (!currentProject || !id) return;
+
+    const currentVersion = editVersions.current[field]?.version || 0;
+    const newVersion = currentVersion + 1;
+
+    // Record the current user's edit
+    editVersions.current[field] = {
+      field,
+      value,
+      editedBy: 'current-user',
+      version: newVersion,
+      timestamp: Date.now(),
+    };
+
+    // BUG:BZ-106 - Simulate a concurrent edit from another user after a short delay
+    // The "other user's" edit arrives and silently overwrites without conflict warning
+    if (newVersion > 1 && newVersion % 3 === 0) {
+      setTimeout(() => {
+        const simulatedValue = field === 'name'
+          ? `${value} (updated)`
+          : `${value}\n\n[Last updated by another team member]`;
+
+        editVersions.current[field] = {
+          field,
+          value: simulatedValue,
+          editedBy: 'other-user',
+          version: newVersion + 1,
+          timestamp: Date.now(),
+        };
+
+        // Silently overwrite with "other user's" edit — no conflict warning
+        updateProject(id, { [field]: simulatedValue });
+        setLastSavedBy('Sarah Chen');
+
+        // BUG:BZ-106 - Log bug trigger
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-106')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-106',
+              timestamp: Date.now(),
+              description: 'Collaborative edit conflict not resolved - last write wins silently',
+              page: 'Project Detail'
+            });
+          }
+        }
+
+        // Show a subtle "saved" indicator that doesn't mention the conflict
+        setShowConflictToast(true);
+        setTimeout(() => setShowConflictToast(false), 2000);
+      }, 1500);
+    }
+
+    // Send the current user's edit
+    updateProject(id, { [field]: value });
+  }, [currentProject, id, updateProject]);
+
+  // BUG:BZ-107 - Fetch and immediately mark notifications as read when activity panel opens
+  useEffect(() => {
+    if (showActivityPanel) {
+      // BUG:BZ-107 - Fetching notifications AND marking them all as read
+      // in the same action — user hasn't actually viewed/scrolled through them
+      fetchNotifications().then(() => {
+        // Mark all as read immediately on fetch, not when user actually views them
+        markAllAsRead();
+
+        // Log bug trigger
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-107')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-107',
+              timestamp: Date.now(),
+              description: 'Notifications marked as read on fetch, not on actual view',
+              page: 'Project Detail'
+            });
+          }
+        }
+      });
+    }
+  }, [showActivityPanel, fetchNotifications, markAllAsRead]);
+
+  // BUG:BZ-109 - Command palette keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        // Only intercept on this page if we have focus context
+        if (document.activeElement?.closest('[data-page="project-detail"]')) {
+          e.preventDefault();
+          setShowCommandPalette(true);
+          setCommandQuery('');
+        }
+      }
+      if (e.key === 'Escape' && showCommandPalette) {
+        setShowCommandPalette(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showCommandPalette]);
+
+  // Focus command input when palette opens
+  useEffect(() => {
+    if (showCommandPalette && commandInputRef.current) {
+      commandInputRef.current.focus();
+    }
+  }, [showCommandPalette]);
+
+  // BUG:BZ-109 - Command palette items and filtered results
+  const commandPaletteItems = useMemo(() => [
+    { id: 'add-task', label: 'Add New Task', action: () => { openTaskModal(); setShowCommandPalette(false); }, icon: '+' },
+    { id: 'settings', label: 'Settings', action: () => { setActiveTab('settings'); setShowCommandPalette(false); }, icon: '⚙' },
+    { id: 'board', label: 'Board View', action: () => { setActiveTab('board'); setShowCommandPalette(false); }, icon: '◫' },
+    { id: 'delete-project', label: 'Delete Project', action: () => { setIsDeleteModalOpen(true); setShowCommandPalette(false); }, icon: '🗑' },
+    { id: 'back-to-projects', label: 'Back to Projects', action: () => { navigate('/projects'); }, icon: '←' },
+    { id: 'activity', label: 'Activity', action: () => { setShowActivityPanel(true); setShowCommandPalette(false); }, icon: '🔔' },
+  ], [navigate]);
+
+  // BUG:BZ-109 - Filter using the broken fuzzy match algorithm
+  const filteredCommands = useMemo(() => {
+    if (!commandQuery.trim()) return commandPaletteItems;
+
+    const results = commandPaletteItems
+      .map(item => ({ ...item, score: fuzzyMatch(commandQuery, item.label) }))
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    // BUG:BZ-109 - Log when search returns empty for a query that should match
+    if (results.length === 0 && commandQuery.length > 3) {
+      const hasPartialMatch = commandPaletteItems.some(item =>
+        item.label.toLowerCase().includes(commandQuery.toLowerCase())
+      );
+      if (hasPartialMatch) {
+        if (typeof window !== 'undefined') {
+          window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+          if (!window.__PERCEPTR_TEST_BUGS__.find((b: any) => b.bugId === 'BZ-109')) {
+            window.__PERCEPTR_TEST_BUGS__.push({
+              bugId: 'BZ-109',
+              timestamp: Date.now(),
+              description: 'Command palette fuzzy search returns no results for exact match',
+              page: 'Project Detail'
+            });
+          }
+        }
+      }
+    }
+
+    return results;
+  }, [commandQuery, commandPaletteItems]);
 
   // BUG:BZ-019 - Autocomplete search with race condition
   const searchAssignees = useCallback((query: string) => {
@@ -299,7 +508,17 @@ export function ProjectDetailPage() {
   const owner = members.find((m) => m.id === currentProject.ownerId);
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-8" data-page="project-detail">
+      {/* BUG:BZ-106 - Conflict toast that only shows "Saved" without mentioning another user overwrote */}
+      {showConflictToast && (
+        <div data-bug-id="BZ-106" className="fixed top-4 right-4 z-50 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-2 rounded-lg shadow-lg text-sm flex items-center gap-2">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          {lastSavedBy ? `Saved by ${lastSavedBy}` : 'Saved'}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
         <div className="flex items-start gap-4">
@@ -344,6 +563,28 @@ export function ProjectDetailPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* BUG:BZ-107 - Activity button that opens notification panel */}
+          <Button variant="outline" onClick={() => setShowActivityPanel(!showActivityPanel)}>
+            <div className="relative">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-[8px] text-white flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </div>
+            Activity
+          </Button>
+          {/* BUG:BZ-109 - Command palette trigger button */}
+          <Button variant="outline" onClick={() => { setShowCommandPalette(true); setCommandQuery(''); }}>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span className="hidden sm:inline">Search</span>
+            <kbd className="hidden sm:inline-flex ml-1 px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded">⌘K</kbd>
+          </Button>
           <Button variant="outline" onClick={openTaskModal}>
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -384,15 +625,23 @@ export function ProjectDetailPage() {
 
       {activeTab === 'settings' && (
         <div className="max-w-2xl space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Project Settings
-            </h2>
+          {/* BUG:BZ-106 - Project settings with collaborative editing that silently overwrites */}
+          <div data-bug-id="BZ-106" className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Project Settings
+              </h2>
+              {lastSavedBy && (
+                <span className="text-xs text-gray-400">
+                  Last edited by {lastSavedBy}
+                </span>
+              )}
+            </div>
             <div className="space-y-4">
               <Input
                 label="Project Name"
                 value={currentProject.name}
-                onChange={(e) => updateProject(currentProject.id, { name: e.target.value })}
+                onChange={(e) => handleCollaborativeEdit('name', e.target.value)}
               />
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -400,7 +649,7 @@ export function ProjectDetailPage() {
                 </label>
                 <textarea
                   value={currentProject.description}
-                  onChange={(e) => updateProject(currentProject.id, { description: e.target.value })}
+                  onChange={(e) => handleCollaborativeEdit('description', e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -767,6 +1016,117 @@ export function ProjectDetailPage() {
           </div>
         </div>
       </Modal>
+
+      {/* BUG:BZ-107 - Activity panel that marks all notifications as read on open, not on view */}
+      {showActivityPanel && (
+        <div className="fixed inset-0 z-40" onClick={() => setShowActivityPanel(false)}>
+          <div className="absolute inset-0 bg-black/20" />
+          <div
+            data-bug-id="BZ-107"
+            ref={activityPanelRef}
+            className="absolute right-0 top-0 h-full w-96 bg-white dark:bg-gray-800 shadow-xl border-l border-gray-200 dark:border-gray-700 overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Project Activity</h3>
+              <button
+                onClick={() => setShowActivityPanel(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4 space-y-3">
+              {notifications.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
+                  No recent activity
+                </p>
+              ) : (
+                notifications
+                  .filter(n => n.linkTo?.includes(id || ''))
+                  .concat(notifications.filter(n => !n.linkTo?.includes(id || '')).slice(0, 5))
+                  .slice(0, 10)
+                  .map((notification) => (
+                    <div
+                      key={notification.id}
+                      className={`p-3 rounded-lg text-sm ${
+                        notification.read
+                          ? 'bg-gray-50 dark:bg-gray-700/50'
+                          : 'bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800'
+                      }`}
+                    >
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {notification.title}
+                      </p>
+                      <p className="text-gray-500 dark:text-gray-400 mt-1">
+                        {notification.message}
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        {new Date(notification.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BUG:BZ-109 - Command palette with broken fuzzy matching */}
+      {showCommandPalette && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center pt-24"
+          onClick={() => setShowCommandPalette(false)}
+        >
+          <div className="absolute inset-0 bg-black/50" />
+          <div
+            data-bug-id="BZ-109"
+            className="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+              <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                ref={commandInputRef}
+                type="text"
+                placeholder="Search actions..."
+                value={commandQuery}
+                onChange={(e) => setCommandQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') setShowCommandPalette(false);
+                  if (e.key === 'Enter' && filteredCommands.length > 0) {
+                    filteredCommands[0].action();
+                  }
+                }}
+                className="flex-1 bg-transparent text-gray-900 dark:text-white text-sm placeholder-gray-400 focus:outline-none"
+              />
+              <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 rounded">ESC</kbd>
+            </div>
+            <div className="max-h-64 overflow-y-auto py-2">
+              {filteredCommands.length === 0 ? (
+                <div className="px-4 py-8 text-center text-sm text-gray-500">
+                  No results found
+                </div>
+              ) : (
+                filteredCommands.map((item) => (
+                  <button
+                    key={item.id}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                    onClick={item.action}
+                  >
+                    <span className="w-6 text-center text-base">{item.icon}</span>
+                    <span className="text-gray-900 dark:text-white">{item.label}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
