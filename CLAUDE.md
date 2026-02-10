@@ -127,22 +127,15 @@ All 119 data-bug-id markers preserved. All 394 BUG:BZ- comments preserved. TypeS
 3. Sidebar active nav item: `bg-gradient-to-r from-blue-50 to-indigo-50/30`
 4. Sidebar logo mark: `bg-gradient-to-br from-blue-600 to-indigo-600`
 
-### PENDING — Phase 6: Final Verification
+### DONE — Phase 6: Final Verification (`971b1ed`)
 
-```bash
-# Bug markers preserved
-grep -rc 'data-bug-id' src/ | awk -F: '{sum+=$2} END {print sum}'   # >= 119
-grep -rc 'BUG:BZ-' src/ | awk -F: '{sum+=$2} END {print sum}'       # >= 394
-
-# No emojis remain in source
-grep -rn '[📊🚀💼📱🔧📈🎯💡🔒⚡🌐🗄️🔍📬🌍👤🔔🔗🎨⚙🗑🔄]' src/   # expect 0
-
-# TypeScript compiles
-npx tsc --noEmit --skipLibCheck
-
-# App runs
-npm run dev  # browse and verify visually
-```
+All checks passed:
+- `data-bug-id`: 119 ✓ | `BUG:BZ-`: 394 ✓ | `__PERCEPTR_TEST_BUGS__`: 395 ✓
+- Emojis remaining: 0 ✓ (fixed stray `🔄` in ProjectsPage, added `refresh-cw` to iconMap)
+- `gray-` references: 0 ✓
+- `tsc --noEmit --skipLibCheck`: clean ✓
+- `vite build`: success ✓ (938 KB JS, 57 KB CSS)
+- Renamed `iconMap.ts` → `iconMap.tsx` (file uses JSX)
 
 ### LATER — Phase 7: Inject 5 Missing Bugs
 
