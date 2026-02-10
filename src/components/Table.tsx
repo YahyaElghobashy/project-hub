@@ -82,13 +82,13 @@ export function Table<T extends Record<string, unknown>>({
     <div className={`overflow-x-auto ${className}`}>
       <table className="w-full">
         <thead>
-          <tr className="border-b border-gray-200 dark:border-gray-700">
+          <tr className="border-b border-zinc-200 dark:border-zinc-700">
             {columns.map((column) => (
               <th
                 key={column.key}
                 className={`
-                  px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider
-                  ${column.sortable ? 'cursor-pointer hover:text-gray-700 dark:hover:text-gray-200' : ''}
+                  px-4 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider
+                  ${column.sortable ? 'cursor-pointer hover:text-zinc-700 dark:hover:text-zinc-200' : ''}
                 `}
                 style={{ width: column.width }}
                 onClick={() => column.sortable && handleSort(column.key)}
@@ -108,12 +108,12 @@ export function Table<T extends Record<string, unknown>>({
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
           {sortedData.length === 0 ? (
             <tr>
               <td
                 colSpan={columns.length}
-                className="px-4 py-12 text-center text-gray-500 dark:text-gray-400"
+                className="px-4 py-12 text-center text-zinc-500 dark:text-zinc-400"
               >
                 {emptyMessage}
               </td>
@@ -123,15 +123,15 @@ export function Table<T extends Record<string, unknown>>({
               <tr
                 key={keyExtractor(item, index)}
                 className={`
-                  bg-white dark:bg-gray-800
-                  ${onRowClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50' : ''}
+                  bg-white dark:bg-zinc-800
+                  ${onRowClick ? 'cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700/50' : ''}
                 `}
                 onClick={() => onRowClick?.(item)}
               >
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100"
+                    className="px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100"
                   >
                     {column.render
                       ? column.render(item)
@@ -169,15 +169,15 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
   }
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
-      <div className="text-sm text-gray-500 dark:text-gray-400">
+    <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-200 dark:border-zinc-700">
+      <div className="text-sm text-zinc-500 dark:text-zinc-400">
         Page {currentPage} of {totalPages}
       </div>
       <div className="flex items-center gap-1">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -190,7 +190,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
               ${
                 page === currentPage
                   ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700'
               }
             `}
           >
@@ -200,7 +200,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ChevronRight className="w-5 h-5" />
         </button>

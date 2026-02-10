@@ -36,7 +36,7 @@ export function ProjectCard({ title, description, imageUrl, category, onClick, o
   return (
     <div
       data-bug-id="BZ-076"
-      className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+      className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
       onClick={onClick}
       ref={cardRef}
     >
@@ -93,14 +93,14 @@ export function ProjectCard({ title, description, imageUrl, category, onClick, o
                 }
               }
             }}
-            className="p-1 text-gray-400 hover:text-yellow-500 transition-colors"
+            className="p-1 text-zinc-400 hover:text-yellow-500 transition-colors"
             aria-label="Bookmark project"
           >
             <Bookmark className="w-4 h-4" fill={isBookmarked ? 'currentColor' : 'none'} />
           </button>
         </div>
-        <h3 className="font-semibold text-gray-900 dark:text-white text-sm">{title}</h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{description}</p>
+        <h3 className="font-semibold text-zinc-900 dark:text-white text-sm">{title}</h3>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">{description}</p>
       </div>
     </div>
   );

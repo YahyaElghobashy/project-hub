@@ -49,9 +49,9 @@ export function StatsGrid({ items, title }: StatsGridProps) {
   }, []);
 
   return (
-    <div data-bug-id="BZ-081" className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+    <div data-bug-id="BZ-081" className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
       {title && (
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{title}</h2>
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">{title}</h2>
       )}
       {/* BUG:BZ-081 - Grid columns use percentage widths (33.33%) instead of 1fr,
           and the gap property adds extra space between columns. The total width becomes
@@ -68,14 +68,14 @@ export function StatsGrid({ items, title }: StatsGridProps) {
         {items.map((item, index) => (
           <div
             key={index}
-            className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg"
+            className="p-4 bg-zinc-50 dark:bg-zinc-700/30 rounded-lg"
           >
-            <p className="text-sm text-gray-500 dark:text-gray-400">{item.label}</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">{item.value}</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">{item.label}</p>
+            <p className="text-xl font-bold text-zinc-900 dark:text-white mt-1">{item.value}</p>
             <p className={`text-xs mt-1 ${
               item.changeType === 'positive' ? 'text-green-600' :
               item.changeType === 'negative' ? 'text-red-600' :
-              'text-gray-500 dark:text-gray-400'
+              'text-zinc-500 dark:text-zinc-400'
             }`}>
               {item.change}
             </p>
@@ -164,14 +164,14 @@ export function ResponsiveStatCards({ items }: { items: StatItem[] }) {
               // they fall back to this small min-width with no max/flex sizing
               minWidth: '100px',
             }}
-            className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-600"
+            className="p-3 bg-zinc-50 dark:bg-zinc-700/30 rounded-lg border border-zinc-100 dark:border-zinc-600"
           >
-            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{item.label}</p>
-            <p className="text-lg font-bold text-gray-900 dark:text-white mt-0.5">{item.value}</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{item.label}</p>
+            <p className="text-lg font-bold text-zinc-900 dark:text-white mt-0.5">{item.value}</p>
             <p className={`text-xs mt-0.5 ${
               item.changeType === 'positive' ? 'text-green-600' :
               item.changeType === 'negative' ? 'text-red-600' :
-              'text-gray-500 dark:text-gray-400'
+              'text-zinc-500 dark:text-zinc-400'
             }`}>
               {item.change}
             </p>

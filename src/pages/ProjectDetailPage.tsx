@@ -604,7 +604,7 @@ export function ProjectDetailPage() {
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate('/projects')}
-            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+            className="p-2 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -617,7 +617,7 @@ export function ProjectDetailPage() {
                 {getProjectIcon(currentProject.icon)}
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
                   {currentProject.name}
                 </h1>
                 <div className="flex items-center gap-2 mt-1">
@@ -625,7 +625,7 @@ export function ProjectDetailPage() {
                     {currentProject.status.replace('_', ' ')}
                   </Badge>
                   {owner && (
-                    <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center gap-1 text-sm text-zinc-500 dark:text-zinc-400">
                       <span>by</span>
                       <Avatar src={owner.avatar} name={owner.name} size="xs" />
                       <span>{owner.name}</span>
@@ -634,7 +634,7 @@ export function ProjectDetailPage() {
                 </div>
               </div>
             </div>
-            <p className="mt-2 text-gray-600 dark:text-gray-400 max-w-2xl">
+            <p className="mt-2 text-zinc-600 dark:text-zinc-400 max-w-2xl">
               {currentProject.description}
             </p>
           </div>
@@ -662,7 +662,7 @@ export function ProjectDetailPage() {
             {/* The tooltip's bottom edge sits directly over the button, intercepting click events.
                 On hover, user sees tooltip, moves to click, tooltip captures the mousedown instead. */}
             <div
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-0 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap z-50 transition-opacity duration-150"
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-0 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto bg-zinc-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap z-50 transition-opacity duration-150"
               onClick={(e) => {
                 // BUG:BZ-105 - Tooltip intercepts the click, consuming it
                 e.stopPropagation();
@@ -681,14 +681,14 @@ export function ProjectDetailPage() {
               }}
             >
               View project activity and notifications
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-2 h-2 bg-gray-900 rotate-45" />
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-2 h-2 bg-zinc-900 rotate-45" />
             </div>
           </div>
           {/* BUG:BZ-109 - Command palette trigger button */}
           <Button variant="outline" onClick={() => { setShowCommandPalette(true); setCommandQuery(''); }}>
             <Search className="w-5 h-5" />
             <span className="hidden sm:inline">Search</span>
-            <kbd className="hidden sm:inline-flex ml-1 px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded">⌘K</kbd>
+            <kbd className="hidden sm:inline-flex ml-1 px-1.5 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-700 rounded">⌘K</kbd>
           </Button>
           {/* BUG:BZ-111 - Copy project link button that uses clipboard API without permission check */}
           <div data-bug-id="BZ-111" className="relative">
@@ -710,13 +710,13 @@ export function ProjectDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 mb-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center gap-1 mb-6 border-b border-zinc-200 dark:border-zinc-700">
         <button
           onClick={() => setActiveTab('board')}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'board'
               ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
           }`}
         >
           Board
@@ -726,7 +726,7 @@ export function ProjectDetailPage() {
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'settings'
               ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
           }`}
         >
           Settings
@@ -741,13 +741,13 @@ export function ProjectDetailPage() {
       {activeTab === 'settings' && (
         <div className="max-w-2xl space-y-6">
           {/* BUG:BZ-106 - Project settings with collaborative editing that silently overwrites */}
-          <div data-bug-id="BZ-106" className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div data-bug-id="BZ-106" className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
                 Project Settings
               </h2>
               {lastSavedBy && (
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-zinc-400">
                   Last edited by {lastSavedBy}
                 </span>
               )}
@@ -759,24 +759,24 @@ export function ProjectDetailPage() {
                 onChange={(e) => handleCollaborativeEdit('name', e.target.value)}
               />
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                   Description
                 </label>
                 <textarea
                   value={currentProject.description}
                   onChange={(e) => handleCollaborativeEdit('description', e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                   Status
                 </label>
                 <select
                   value={currentProject.status}
                   onChange={(e) => updateProject(currentProject.id, { status: e.target.value as typeof currentProject.status })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="active">Active</option>
                   <option value="on_hold">On Hold</option>
@@ -791,7 +791,7 @@ export function ProjectDetailPage() {
           <div
             data-bug-id="BZ-113"
             ref={resizablePanelRef}
-            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 overflow-hidden resize-x"
+            className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6 overflow-hidden resize-x"
             style={{
               resize: 'horizontal',
               minWidth: '300px',
@@ -801,34 +801,34 @@ export function ProjectDetailPage() {
               ...(panelWidth !== null ? { width: `${panelWidth}px` } : {}),
             }}
           >
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
               Widget Layout
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">
               Drag the right edge to resize this panel. Widget cards will adjust responsively.
             </p>
             <div className="grid grid-cols-2 gap-3">
               {['Tasks Overview', 'Sprint Progress', 'Team Velocity', 'Burn Down'].map((widget) => (
-                <div key={widget} className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-600">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{widget}</p>
-                  <p className="text-xs text-gray-400 mt-1">Enabled</p>
+                <div key={widget} className="p-3 bg-zinc-50 dark:bg-zinc-700/30 rounded-lg border border-zinc-100 dark:border-zinc-600">
+                  <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{widget}</p>
+                  <p className="text-xs text-zinc-400 mt-1">Enabled</p>
                 </div>
               ))}
             </div>
             {panelWidth !== null && (
-              <p className="text-xs text-gray-400 mt-3">Panel width: {panelWidth}px</p>
+              <p className="text-xs text-zinc-400 mt-3">Panel width: {panelWidth}px</p>
             )}
           </div>
 
           {/* BUG:BZ-114 - Custom color picker where right-click shows browser context menu */}
           <div
             data-bug-id="BZ-114"
-            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6"
+            className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6"
           >
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
               Project Color
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">
               Choose a color for this project. Right-click a swatch for more options.
             </p>
             <div className="flex flex-wrap gap-3">
@@ -838,7 +838,7 @@ export function ProjectDetailPage() {
                   type="button"
                   className={`w-10 h-10 rounded-lg border-2 transition-all hover:scale-110 ${
                     customColor === color
-                      ? 'border-gray-900 dark:border-white ring-2 ring-offset-2 ring-blue-500'
+                      ? 'border-zinc-900 dark:border-white ring-2 ring-offset-2 ring-blue-500'
                       : 'border-transparent'
                   }`}
                   style={{ backgroundColor: color }}
@@ -876,15 +876,15 @@ export function ProjectDetailPage() {
             </div>
             <div className="mt-3 flex items-center gap-2">
               <div className="w-6 h-6 rounded" style={{ backgroundColor: customColor }} />
-              <span className="text-sm text-gray-600 dark:text-gray-400">{customColor}</span>
+              <span className="text-sm text-zinc-600 dark:text-zinc-400">{customColor}</span>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-red-200 dark:border-red-900 p-6">
+          <div className="bg-white dark:bg-zinc-800 rounded-lg border border-red-200 dark:border-red-900 p-6">
             <h2 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
               Danger Zone
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
               Once you delete a project, there is no going back. Please be certain.
             </p>
             <Button variant="danger" onClick={() => setIsDeleteModalOpen(true)}>
@@ -911,19 +911,19 @@ export function ProjectDetailPage() {
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                     step <= wizardStep
                       ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
+                      : 'bg-zinc-200 dark:bg-zinc-600 text-zinc-500 dark:text-zinc-400'
                   }`}
                 >
                   {step}
                 </div>
                 <span className={`ml-2 text-sm ${
-                  step <= wizardStep ? 'text-blue-600 font-medium' : 'text-gray-400'
+                  step <= wizardStep ? 'text-blue-600 font-medium' : 'text-zinc-400'
                 }`}>
                   {step === 1 ? 'Basic Info' : step === 2 ? 'Details' : 'Tags & Date'}
                 </span>
                 {step < 3 && (
                   <div className={`w-12 h-0.5 mx-2 ${
-                    step < wizardStep ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                    step < wizardStep ? 'bg-blue-600' : 'bg-zinc-200 dark:bg-zinc-600'
                   }`} />
                 )}
               </div>
@@ -940,13 +940,13 @@ export function ProjectDetailPage() {
                 onChange={(e) => setStep1Data({ ...step1Data, title: e.target.value })}
               />
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                   Priority
                 </label>
                 <select
                   value={step1Data.priority}
                   onChange={(e) => setStep1Data({ ...step1Data, priority: e.target.value as Task['priority'] })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -963,7 +963,7 @@ export function ProjectDetailPage() {
               {/* BUG:BZ-102 - Description with per-keystroke undo stack */}
               <div data-bug-id="BZ-102">
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                     Description
                   </label>
                   <div className="flex items-center gap-1">
@@ -971,7 +971,7 @@ export function ProjectDetailPage() {
                       type="button"
                       onClick={handleUndo}
                       disabled={undoIndex <= 0}
-                      className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 rounded"
+                      className="p-1 text-zinc-400 hover:text-zinc-600 disabled:opacity-30 rounded"
                       title="Undo (Ctrl+Z)"
                     >
                       <Undo2 className="w-4 h-4" />
@@ -980,12 +980,12 @@ export function ProjectDetailPage() {
                       type="button"
                       onClick={handleRedo}
                       disabled={undoIndex >= undoStack.length - 1}
-                      className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 rounded"
+                      className="p-1 text-zinc-400 hover:text-zinc-600 disabled:opacity-30 rounded"
                       title="Redo (Ctrl+Shift+Z)"
                     >
                       <Redo2 className="w-4 h-4" />
                     </button>
-                    <span className="text-xs text-gray-400 ml-1">
+                    <span className="text-xs text-zinc-400 ml-1">
                       {undoIndex}/{undoStack.length - 1}
                     </span>
                   </div>
@@ -996,13 +996,13 @@ export function ProjectDetailPage() {
                   onChange={(e) => handleDescriptionChange(e.target.value)}
                   onKeyDown={handleDescriptionKeyDown}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               {/* BUG:BZ-019 - Assignee autocomplete with race condition */}
               <div data-bug-id="BZ-019" className="relative">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                   Assignee
                 </label>
                 <Input
@@ -1031,19 +1031,19 @@ export function ProjectDetailPage() {
                   }}
                 />
                 {showAssigneeDropdown && assigneeResults.length > 0 && (
-                  <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  <div className="absolute z-10 mt-1 w-full bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                     {assigneeResults.map((result) => (
                       <button
                         key={result.id}
                         type="button"
-                        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 text-sm"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-600 text-sm"
                         onMouseDown={(e) => {
                           e.preventDefault();
                           handleAssigneeSelect(result);
                         }}
                       >
                         <Avatar src={result.avatar} name={result.name} size="xs" />
-                        <span className="text-gray-900 dark:text-white">{result.name}</span>
+                        <span className="text-zinc-900 dark:text-white">{result.name}</span>
                       </button>
                     ))}
                   </div>
@@ -1057,7 +1057,7 @@ export function ProjectDetailPage() {
             <div className="space-y-4">
               {/* BUG:BZ-104 - Multi-select tag dropdown where remove (X) button has no handler */}
               <div data-bug-id="BZ-104">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                   Tags
                 </label>
                 {/* Selected tags display */}
@@ -1101,17 +1101,17 @@ export function ProjectDetailPage() {
                   <button
                     type="button"
                     onClick={() => setShowTagDropdown(!showTagDropdown)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     {selectedTags.length === 0 ? 'Select tags...' : `${selectedTags.length} tag${selectedTags.length > 1 ? 's' : ''} selected`}
                   </button>
                   {showTagDropdown && (
-                    <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    <div className="absolute z-10 mt-1 w-full bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                       {AVAILABLE_TAGS.filter(t => !selectedTags.includes(t)).map((tag) => (
                         <button
                           key={tag}
                           type="button"
-                          className="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 text-sm text-gray-900 dark:text-white"
+                          className="w-full px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-600 text-sm text-zinc-900 dark:text-white"
                           onClick={() => handleTagAdd(tag)}
                         >
                           {tag}
@@ -1175,13 +1175,13 @@ export function ProjectDetailPage() {
                 {selectedTask.priority}
               </Badge>
             </div>
-            <p className="text-gray-600 dark:text-gray-400">{selectedTask.description}</p>
+            <p className="text-zinc-600 dark:text-zinc-400">{selectedTask.description}</p>
             {selectedTask.tags.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {selectedTask.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded"
+                    className="px-2 py-1 text-xs bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded"
                   >
                     {tag}
                   </span>
@@ -1189,7 +1189,7 @@ export function ProjectDetailPage() {
               </div>
             )}
             {selectedTask.dueDate && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
                 Due: {new Date(selectedTask.dueDate).toLocaleDateString()}
               </p>
             )}
@@ -1205,7 +1205,7 @@ export function ProjectDetailPage() {
         size="sm"
       >
         <div className="space-y-4">
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-zinc-600 dark:text-zinc-400">
             Are you sure you want to delete "{currentProject.name}"? This action cannot be undone.
           </p>
           <div className="flex justify-end gap-3">
@@ -1226,21 +1226,21 @@ export function ProjectDetailPage() {
           <div
             data-bug-id="BZ-107"
             ref={activityPanelRef}
-            className="absolute right-0 top-0 h-full w-96 bg-white dark:bg-gray-800 shadow-xl border-l border-gray-200 dark:border-gray-700 overflow-y-auto"
+            className="absolute right-0 top-0 h-full w-96 bg-white dark:bg-zinc-800 shadow-xl border-l border-zinc-200 dark:border-zinc-700 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Project Activity</h3>
+            <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-700">
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Project Activity</h3>
               <button
                 onClick={() => setShowActivityPanel(false)}
-                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
+                className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 rounded"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-4 space-y-3">
               {notifications.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-8">
                   No recent activity
                 </p>
               ) : (
@@ -1253,17 +1253,17 @@ export function ProjectDetailPage() {
                       key={notification.id}
                       className={`p-3 rounded-lg text-sm ${
                         notification.read
-                          ? 'bg-gray-50 dark:bg-gray-700/50'
+                          ? 'bg-zinc-50 dark:bg-zinc-700/50'
                           : 'bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800'
                       }`}
                     >
-                      <p className="font-medium text-gray-900 dark:text-white">
+                      <p className="font-medium text-zinc-900 dark:text-white">
                         {notification.title}
                       </p>
-                      <p className="text-gray-500 dark:text-gray-400 mt-1">
+                      <p className="text-zinc-500 dark:text-zinc-400 mt-1">
                         {notification.message}
                       </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
                         {new Date(notification.createdAt).toLocaleString()}
                       </p>
                     </div>
@@ -1283,11 +1283,11 @@ export function ProjectDetailPage() {
           <div className="absolute inset-0 bg-black/50" />
           <div
             data-bug-id="BZ-109"
-            className="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+            className="relative w-full max-w-lg bg-white dark:bg-zinc-800 rounded-xl shadow-2xl border border-zinc-200 dark:border-zinc-700 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-              <Search className="w-5 h-5 text-gray-400" />
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-200 dark:border-zinc-700">
+              <Search className="w-5 h-5 text-zinc-400" />
               <input
                 ref={commandInputRef}
                 type="text"
@@ -1300,24 +1300,24 @@ export function ProjectDetailPage() {
                     filteredCommands[0].action();
                   }
                 }}
-                className="flex-1 bg-transparent text-gray-900 dark:text-white text-sm placeholder-gray-400 focus:outline-none"
+                className="flex-1 bg-transparent text-zinc-900 dark:text-white text-sm placeholder-zinc-400 focus:outline-none"
               />
-              <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 rounded">ESC</kbd>
+              <kbd className="px-1.5 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-700 text-zinc-500 rounded">ESC</kbd>
             </div>
             <div className="max-h-64 overflow-y-auto py-2">
               {filteredCommands.length === 0 ? (
-                <div className="px-4 py-8 text-center text-sm text-gray-500">
+                <div className="px-4 py-8 text-center text-sm text-zinc-500">
                   No results found
                 </div>
               ) : (
                 filteredCommands.map((item) => (
                   <button
                     key={item.id}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-zinc-100 dark:hover:bg-zinc-700 text-sm"
                     onClick={item.action}
                   >
                     <span className="w-6 flex items-center justify-center">{item.icon}</span>
-                    <span className="text-gray-900 dark:text-white">{item.label}</span>
+                    <span className="text-zinc-900 dark:text-white">{item.label}</span>
                   </button>
                 ))
               )}

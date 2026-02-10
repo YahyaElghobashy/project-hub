@@ -93,8 +93,8 @@ export function AsyncPage() {
     <div className="p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Activity & Updates</h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Activity & Updates</h1>
+        <p className="mt-1 text-zinc-600 dark:text-zinc-400">
           Real-time activity feed, orders, and collaborative editing
         </p>
       </div>
@@ -190,9 +190,9 @@ function StaleDataFeed() {
     <div data-bug-id="BZ-089">
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Activity</h2>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Recent Activity</h2>
           {lastFetched && (
-            <span className="text-xs text-gray-400 dark:text-gray-500">
+            <span className="text-xs text-zinc-400 dark:text-zinc-500">
               Updated {formatTime(lastFetched.toISOString())}
             </span>
           )}
@@ -206,18 +206,18 @@ function StaleDataFeed() {
             {activity.map((item) => (
               <div
                 key={item.id}
-                className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                className="flex items-start gap-3 p-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700/30"
               >
                 <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-xs font-medium text-blue-600 dark:text-blue-400 flex-shrink-0">
                   {item.user.split(' ').map(n => n[0]).join('')}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900 dark:text-white">
+                  <p className="text-sm text-zinc-900 dark:text-white">
                     <span className="font-medium">{item.user}</span>{' '}
-                    <span className="text-gray-500 dark:text-gray-400">{item.action}</span>{' '}
+                    <span className="text-zinc-500 dark:text-zinc-400">{item.action}</span>{' '}
                     <span className="text-blue-600 dark:text-blue-400">{item.target}</span>
                   </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
                     {formatTime(item.timestamp)}
                   </p>
                 </div>
@@ -322,16 +322,16 @@ function OrderSubmission() {
   return (
     <div data-bug-id="BZ-090">
       <Card>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Submit Order</h2>
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Submit Order</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
               Product
             </label>
             <select
               value={product}
               onChange={(e) => setProduct(e.target.value)}
-              className="block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="Widget Pro">Widget Pro — $29.99</option>
               <option value="Widget Basic">Widget Basic — $14.99</option>
@@ -347,7 +347,7 @@ function OrderSubmission() {
             />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-900 dark:text-white">
+            <span className="text-sm font-medium text-zinc-900 dark:text-white">
               Total: ${(quantity * 29.99).toFixed(2)}
             </span>
             <Button onClick={submitOrder} isLoading={isSubmitting}>
@@ -357,17 +357,17 @@ function OrderSubmission() {
         </div>
 
         {orders.length > 0 && (
-          <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recent Orders</h3>
+          <div className="mt-4 border-t border-zinc-200 dark:border-zinc-700 pt-4">
+            <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Recent Orders</h3>
             <div className="space-y-2 max-h-40 overflow-y-auto">
               {orders.map((order) => (
                 <div
                   key={order.id}
-                  className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700/30 rounded-lg text-sm"
+                  className="flex items-center justify-between p-2 bg-zinc-50 dark:bg-zinc-700/30 rounded-lg text-sm"
                 >
-                  <span className="text-gray-900 dark:text-white">{order.product} x{order.quantity}</span>
+                  <span className="text-zinc-900 dark:text-white">{order.product} x{order.quantity}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-gray-500">${order.total.toFixed(2)}</span>
+                    <span className="text-zinc-500">${order.total.toFixed(2)}</span>
                     <Badge variant={order.status === 'confirmed' ? 'success' : order.status === 'pending' ? 'warning' : 'error'}>
                       {order.status}
                     </Badge>
@@ -463,7 +463,7 @@ function InfiniteScrollFeed() {
   return (
     <div data-bug-id="BZ-091">
       <Card>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Updates Feed</h2>
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Updates Feed</h2>
         <div
           ref={containerRef}
           className="max-h-96 overflow-y-auto space-y-3 pr-1"
@@ -471,14 +471,14 @@ function InfiniteScrollFeed() {
           {items.map((item) => (
             <div
               key={item.id}
-              className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+              className="p-3 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700/30 transition-colors"
             >
               <div className="flex items-center justify-between mb-1">
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white">{item.title}</h3>
+                <h3 className="text-sm font-medium text-zinc-900 dark:text-white">{item.title}</h3>
                 <Badge variant="default">{item.category}</Badge>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{item.body}</p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">{item.body}</p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
                 {new Date(item.createdAt).toLocaleTimeString()}
               </p>
             </div>
@@ -489,10 +489,10 @@ function InfiniteScrollFeed() {
             </div>
           )}
           {!hasMore && items.length > 0 && (
-            <p className="text-center text-sm text-gray-400 py-2">No more updates</p>
+            <p className="text-center text-sm text-zinc-400 py-2">No more updates</p>
           )}
           {items.length === 0 && !loading && (
-            <p className="text-center text-sm text-gray-400 py-8">No updates yet</p>
+            <p className="text-center text-sm text-zinc-400 py-8">No updates yet</p>
           )}
         </div>
       </Card>
@@ -579,7 +579,7 @@ function AutoSaveEditor() {
     <div data-bug-id="BZ-092">
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Quick Notes</h2>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Quick Notes</h2>
           <div className="flex items-center gap-2">
             <span className={`text-xs px-2 py-1 rounded-full ${
               saveStatus === 'saved'
@@ -597,19 +597,19 @@ function AutoSaveEditor() {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="block w-full text-lg font-medium text-gray-900 dark:text-white bg-transparent border-0 border-b border-gray-200 dark:border-gray-700 px-0 py-2 focus:outline-none focus:border-blue-500"
+            className="block w-full text-lg font-medium text-zinc-900 dark:text-white bg-transparent border-0 border-b border-zinc-200 dark:border-zinc-700 px-0 py-2 focus:outline-none focus:border-blue-500"
             placeholder="Document title..."
           />
           <textarea
             value={content}
             onChange={(e) => handleContentChange(e.target.value)}
             rows={8}
-            className="block w-full text-sm text-gray-700 dark:text-gray-300 bg-transparent border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+            className="block w-full text-sm text-zinc-700 dark:text-zinc-300 bg-transparent border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
             placeholder="Start writing..."
           />
         </div>
         <div className="mt-3 flex items-center justify-between">
-          <p className="text-xs text-gray-400 dark:text-gray-500">
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">
             Auto-saves after 2 seconds of inactivity
           </p>
           {hasUnsavedChanges && (
@@ -730,18 +730,18 @@ function LiveUpdatesPanel() {
     <div data-bug-id="BZ-095">
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Live Updates</h2>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Live Updates</h2>
           <div className="flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${
               connectionStatus === 'connected' ? 'bg-green-500' :
               connectionStatus === 'reconnecting' ? 'bg-yellow-500 animate-pulse' :
               'bg-red-500'
             }`} />
-            <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 capitalize">
               {connectionStatus}
             </span>
             {reconnectCountRef.current > 0 && (
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-zinc-400">
                 (reconnected {reconnectCountRef.current}x)
               </span>
             )}
@@ -752,7 +752,7 @@ function LiveUpdatesPanel() {
           <select
             value={subscribedChannel}
             onChange={(e) => setSubscribedChannel(e.target.value)}
-            className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="text-sm border border-zinc-300 dark:border-zinc-600 rounded-md px-2 py-1 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
           >
             <option value="project-updates">Project Updates</option>
             <option value="team-chat">Team Chat</option>
@@ -770,14 +770,14 @@ function LiveUpdatesPanel() {
 
         <div className="space-y-2 max-h-60 overflow-y-auto">
           {events.length === 0 ? (
-            <p className="text-center text-sm text-gray-400 py-4">
+            <p className="text-center text-sm text-zinc-400 py-4">
               {connectionStatus === 'connected' ? 'Waiting for events...' : 'Disconnected — no events'}
             </p>
           ) : (
             events.map((event) => (
               <div
                 key={event.id}
-                className="flex items-start gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/30"
+                className="flex items-start gap-2 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-700/30"
               >
                 <span className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${
                   event.type === 'alert'
@@ -789,8 +789,8 @@ function LiveUpdatesPanel() {
                   {event.type === 'alert' ? '!' : event.type === 'message' ? 'M' : 'U'}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900 dark:text-white">{event.content}</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                  <p className="text-sm text-zinc-900 dark:text-white">{event.content}</p>
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500">
                     {new Date(event.receivedAt).toLocaleTimeString()} · #{event.channel}
                   </p>
                 </div>
@@ -923,28 +923,28 @@ function OptimisticDeleteList() {
   return (
     <div data-bug-id="BZ-096">
       <Card>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Resources</h2>
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Resources</h2>
 
         <div className="space-y-2">
           {items.map((item) => (
             <div
               key={item.id}
-              className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+              className="flex items-center justify-between p-3 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700/30 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <span className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-400">
                   {typeIcons[item.type]}
                 </span>
                 <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{item.name}</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                  <p className="text-sm font-medium text-zinc-900 dark:text-white">{item.name}</p>
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500">
                     {item.relatedItems} linked items · {new Date(item.createdAt).toLocaleDateString()}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => handleDelete(item)}
-                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                 title="Delete"
               >
                 <Trash2 className="w-4 h-4" />
@@ -952,13 +952,13 @@ function OptimisticDeleteList() {
             </div>
           ))}
           {items.length === 0 && (
-            <p className="text-center text-sm text-gray-400 py-4">No resources</p>
+            <p className="text-center text-sm text-zinc-400 py-4">No resources</p>
           )}
         </div>
 
         {/* Undo bar */}
         {undoStatus === 'available' && undoItem && (
-          <div className="mt-3 flex items-center justify-between p-2.5 bg-gray-800 dark:bg-gray-900 rounded-lg text-white">
+          <div className="mt-3 flex items-center justify-between p-2.5 bg-zinc-800 dark:bg-zinc-900 rounded-lg text-white">
             <span className="text-sm">"{undoItem.name}" deleted</span>
             <button
               onClick={handleUndo}
@@ -969,9 +969,9 @@ function OptimisticDeleteList() {
           </div>
         )}
         {undoStatus === 'restoring' && (
-          <div className="mt-3 flex items-center gap-2 p-2.5 bg-gray-100 dark:bg-gray-700 rounded-lg">
+          <div className="mt-3 flex items-center gap-2 p-2.5 bg-zinc-100 dark:bg-zinc-700 rounded-lg">
             <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full" />
-            <span className="text-sm text-gray-600 dark:text-gray-300">Restoring...</span>
+            <span className="text-sm text-zinc-600 dark:text-zinc-300">Restoring...</span>
           </div>
         )}
         {undoStatus === 'partial' && (
@@ -1086,7 +1086,7 @@ function BatchOperationPanel() {
     <div data-bug-id="BZ-097">
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">File Manager</h2>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">File Manager</h2>
           {selectedIds.size > 0 && (
             <Button
               variant="danger"
@@ -1101,14 +1101,14 @@ function BatchOperationPanel() {
 
         <div className="space-y-1">
           {/* Select all header */}
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-200 dark:border-zinc-700">
             <input
               type="checkbox"
               checked={selectedIds.size === items.length && items.length > 0}
               onChange={toggleSelectAll}
-              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="w-4 h-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
             />
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
               {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select all'}
             </span>
           </div>
@@ -1121,7 +1121,7 @@ function BatchOperationPanel() {
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors ${
                   selectedIds.has(item.id)
                     ? 'bg-blue-50 dark:bg-blue-900/20'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-700/30'
+                    : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/30'
                 }`}
                 onClick={() => toggleSelect(item.id)}
               >
@@ -1129,11 +1129,11 @@ function BatchOperationPanel() {
                   type="checkbox"
                   checked={selectedIds.has(item.id)}
                   onChange={() => toggleSelect(item.id)}
-                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="w-4 h-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900 dark:text-white truncate">{item.name}</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{item.owner}</p>
+                  <p className="text-sm text-zinc-900 dark:text-white truncate">{item.name}</p>
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500">{item.owner}</p>
                 </div>
                 {item.permission === 'restricted' && (
                   <Badge variant="warning">Restricted</Badge>
@@ -1270,13 +1270,13 @@ function CachedDataDisplay() {
     <div data-bug-id="BZ-099">
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">System Metrics</h2>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">System Metrics</h2>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-400 dark:text-gray-500">
+            <span className="text-xs text-zinc-400 dark:text-zinc-500">
               Client: {cacheVersion}
             </span>
             {apiVersion && (
-              <span className="text-xs text-gray-400 dark:text-gray-500">
+              <span className="text-xs text-zinc-400 dark:text-zinc-500">
                 API: {apiVersion}
               </span>
             )}
@@ -1296,27 +1296,27 @@ function CachedDataDisplay() {
               {data.metrics.map((metric, index) => (
                 <div
                   key={index}
-                  className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg"
+                  className="p-3 bg-zinc-50 dark:bg-zinc-700/30 rounded-lg"
                 >
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{metric.label}</p>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">{metric.label}</p>
+                  <p className="text-lg font-semibold text-zinc-900 dark:text-white">
                     {metric.value !== undefined ? metric.value.toLocaleString() : '—'}
                   </p>
                   {/* BUG:BZ-099 - change is undefined because stale JS reads 'delta' but new API sends 'percentChange' */}
-                  <p className={`text-xs mt-0.5 ${metric.change ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
+                  <p className={`text-xs mt-0.5 ${metric.change ? 'text-green-600 dark:text-green-400' : 'text-zinc-400'}`}>
                     {metric.change || 'No change data'}
                   </p>
                 </div>
               ))}
             </div>
             {data.lastUpdated && (
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">
+              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-3">
                 Last updated: {new Date(data.lastUpdated).toLocaleString()}
               </p>
             )}
           </div>
         ) : (
-          <p className="text-center text-sm text-gray-400 py-8">Failed to load metrics</p>
+          <p className="text-center text-sm text-zinc-400 py-8">Failed to load metrics</p>
         )}
       </Card>
     </div>

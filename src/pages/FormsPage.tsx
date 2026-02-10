@@ -76,9 +76,9 @@ function FloatingInput({ label, name, type = 'text', autoComplete, value, onChan
         onBlur={() => setIsFocused(false)}
         className={`
           peer w-full px-3 pt-5 pb-2 text-sm border rounded-lg
-          bg-white dark:bg-gray-800
-          border-gray-300 dark:border-gray-600
-          text-gray-900 dark:text-gray-100
+          bg-white dark:bg-zinc-800
+          border-zinc-300 dark:border-zinc-600
+          text-zinc-900 dark:text-zinc-100
           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
           placeholder-transparent
         `}
@@ -93,7 +93,7 @@ function FloatingInput({ label, name, type = 'text', autoComplete, value, onChan
           absolute left-3 transition-all duration-200 pointer-events-none
           ${shouldFloat
             ? 'top-1 text-xs text-blue-600 dark:text-blue-400'
-            : 'top-3.5 text-sm text-gray-400 dark:text-gray-500'
+            : 'top-3.5 text-sm text-zinc-400 dark:text-zinc-500'
           }
         `}
       >
@@ -301,25 +301,25 @@ function FileUploadForm() {
 
   return (
     <div className="space-y-4" data-bug-id="BZ-012">
-      <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
-        <CloudUpload className="mx-auto h-12 w-12 text-gray-400" />
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+      <div className="border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg p-8 text-center">
+        <CloudUpload className="mx-auto h-12 w-12 text-zinc-400" />
+        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           Drag and drop a file, or click to browse
         </p>
         <input
           type="file"
           onChange={handleFileSelect}
-          className="mt-4 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 dark:file:bg-blue-900/20 dark:file:text-blue-400"
+          className="mt-4 text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 dark:file:bg-blue-900/20 dark:file:text-blue-400"
         />
       </div>
 
       {selectedFile && (
-        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+        <div className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-700/50 rounded-lg">
           <div className="flex items-center gap-3">
             <FileText className="w-8 h-8 text-blue-500" />
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedFile.name}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{selectedFile.name}</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
                 {(selectedFile.size / 1024).toFixed(1)} KB
               </p>
             </div>
@@ -335,7 +335,7 @@ function FileUploadForm() {
       )}
 
       {isUploading && (
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+        <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-2">
           <div
             className="bg-blue-600 h-2 rounded-full transition-all duration-300"
             style={{ width: `${uploadProgress}%` }}
@@ -422,40 +422,40 @@ function RichTextEditor() {
   return (
     <div className="space-y-2" data-bug-id="BZ-013">
       {/* Toolbar */}
-      <div className="flex items-center gap-1 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-t-lg border border-b-0 border-gray-300 dark:border-gray-600">
+      <div className="flex items-center gap-1 p-2 bg-zinc-50 dark:bg-zinc-700/50 rounded-t-lg border border-b-0 border-zinc-300 dark:border-zinc-600">
         <button
           type="button"
           onClick={() => execCommand('bold')}
-          className={`p-2 rounded text-sm font-bold ${isBold ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+          className={`p-2 rounded text-sm font-bold ${isBold ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600' : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600'}`}
         >
           B
         </button>
         <button
           type="button"
           onClick={() => execCommand('italic')}
-          className={`p-2 rounded text-sm italic ${isItalic ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+          className={`p-2 rounded text-sm italic ${isItalic ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600' : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600'}`}
         >
           I
         </button>
         <button
           type="button"
           onClick={() => execCommand('underline')}
-          className={`p-2 rounded text-sm underline ${isUnderline ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+          className={`p-2 rounded text-sm underline ${isUnderline ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600' : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600'}`}
         >
           U
         </button>
-        <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
+        <div className="w-px h-6 bg-zinc-300 dark:bg-zinc-600 mx-1" />
         <button
           type="button"
           onClick={() => execCommand('insertUnorderedList')}
-          className="p-2 rounded text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+          className="p-2 rounded text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600"
         >
           <List className="w-4 h-4" />
         </button>
         <button
           type="button"
           onClick={() => execCommand('insertOrderedList')}
-          className="p-2 rounded text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+          className="p-2 rounded text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600"
         >
           <ListOrdered className="w-4 h-4" />
         </button>
@@ -466,14 +466,14 @@ function RichTextEditor() {
         ref={editorRef}
         contentEditable
         onPaste={handlePaste}
-        className="min-h-[200px] p-4 border border-gray-300 dark:border-gray-600 rounded-b-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 prose prose-sm max-w-none"
+        className="min-h-[200px] p-4 border border-zinc-300 dark:border-zinc-600 rounded-b-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 prose prose-sm max-w-none"
         role="textbox"
         aria-multiline="true"
         aria-label="Rich text editor"
       />
 
       <div className="flex justify-between items-center">
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
           Tip: Use the toolbar above to format text, or paste content from other applications.
         </p>
         <Button onClick={handleSave} size="sm">
@@ -587,19 +587,19 @@ function PricingForm() {
   return (
     <div className="space-y-4" data-bug-id="BZ-014">
       {items.map(item => (
-        <div key={item.id} className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+        <div key={item.id} className="flex items-center gap-4 p-3 bg-zinc-50 dark:bg-zinc-700/50 rounded-lg">
           <div className="flex-1">
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.name}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Monthly subscription</p>
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{item.name}</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">Monthly subscription</p>
           </div>
           {/* BUG:BZ-020 - Quantity spinner wraps around past min/max instead of clamping */}
           <div className="w-24" data-bug-id="BZ-020">
-            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1 text-center">Licenses</label>
+            <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1 text-center">Licenses</label>
             <div className="flex items-center">
               <button
                 type="button"
                 onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-l-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="px-2 py-1 text-sm border border-zinc-300 dark:border-zinc-600 rounded-l-lg bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
               >
                 -
               </button>
@@ -609,34 +609,34 @@ function PricingForm() {
                 max={999}
                 value={item.quantity}
                 onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 0)}
-                className="w-14 py-1 text-sm text-center border-t border-b border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                className="w-14 py-1 text-sm text-center border-t border-b border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
               <button
                 type="button"
                 onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-r-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="px-2 py-1 text-sm border border-zinc-300 dark:border-zinc-600 rounded-r-lg bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
               >
                 +
               </button>
             </div>
           </div>
           <div className="relative w-40">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">$</span>
             <input
               type="text"
               value={item.price}
               onChange={(e) => handlePriceChange(item.id, e.target.value)}
-              className="w-full pl-7 pr-3 py-2 text-sm text-right border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-7 pr-3 py-2 text-sm text-right border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="0.00"
             />
           </div>
         </div>
       ))}
 
-      <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between pt-4 border-t border-zinc-200 dark:border-zinc-700">
         <div>
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Monthly Total</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Monthly Total</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
             ${items.reduce((sum, item) => {
               const parsed = parseFloat(item.price.replace(/[$,]/g, ''));
               return sum + (isNaN(parsed) ? 0 : parsed) * item.quantity;
@@ -745,20 +745,20 @@ function ContactForm() {
     <form onSubmit={handleSubmit} className="space-y-4" data-bug-id="BZ-018">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
             Name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={contactData.name}
             onChange={handleChange('name')}
-            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Your full name"
           />
         </div>
         {/* BUG:BZ-018 - Email field doesn't sanitize invisible Unicode characters */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
             Email <span className="text-red-500">*</span>
           </label>
           <div className="relative">
@@ -766,12 +766,12 @@ function ContactForm() {
               type="text"
               value={contactData.email}
               onChange={handleChange('email')}
-              className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              className={`w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 emailValid === true
                   ? 'border-green-400 dark:border-green-500'
                   : emailValid === false
                   ? 'border-red-400 dark:border-red-500'
-                  : 'border-gray-300 dark:border-gray-600'
+                  : 'border-zinc-300 dark:border-zinc-600'
               }`}
               placeholder="you@example.com"
             />
@@ -786,34 +786,34 @@ function ContactForm() {
               </span>
             )}
           </div>
-          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+          <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
             We'll use this to respond to your inquiry.
           </p>
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
           Subject
         </label>
         <input
           type="text"
           value={contactData.subject}
           onChange={handleChange('subject')}
-          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="What is this about?"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
           Message <span className="text-red-500">*</span>
         </label>
         <textarea
           value={contactData.message}
           onChange={handleChange('message')}
           rows={4}
-          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+          className="w-full px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
           placeholder="Describe your question or feedback..."
         />
       </div>
@@ -874,14 +874,14 @@ export function FormsPage() {
   return (
     <div className="p-4 lg:p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Forms & Inputs</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Forms & Inputs</h1>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
           Manage checkout, file uploads, content editing, and pricing configuration.
         </p>
       </div>
 
       {/* Section tabs */}
-      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700 pb-0">
+      <div className="flex gap-2 border-b border-zinc-200 dark:border-zinc-700 pb-0">
         {sections.map(section => (
           <button
             key={section.id}
@@ -890,7 +890,7 @@ export function FormsPage() {
               flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors
               ${activeSection === section.id
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-300'
               }
             `}
           >
@@ -904,8 +904,8 @@ export function FormsPage() {
       <Card padding="lg">
         {activeSection === 'checkout' && (
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Shipping Information</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">Shipping Information</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
               Enter your shipping details for checkout.
             </p>
             <CheckoutForm />
@@ -914,8 +914,8 @@ export function FormsPage() {
 
         {activeSection === 'upload' && (
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Upload Attachments</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">Upload Attachments</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
               Upload project files, documents, and attachments.
             </p>
             <FileUploadForm />
@@ -924,8 +924,8 @@ export function FormsPage() {
 
         {activeSection === 'editor' && (
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Content Editor</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">Content Editor</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
               Write and format project descriptions, notes, and documentation.
             </p>
             <RichTextEditor />
@@ -934,8 +934,8 @@ export function FormsPage() {
 
         {activeSection === 'pricing' && (
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Plan Pricing</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">Plan Pricing</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
               Configure pricing for subscription plans.
             </p>
             <PricingForm />
@@ -944,8 +944,8 @@ export function FormsPage() {
 
         {activeSection === 'contact' && (
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Contact Us</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">Contact Us</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
               Send a message to our team for support or feedback.
             </p>
             <ContactForm />

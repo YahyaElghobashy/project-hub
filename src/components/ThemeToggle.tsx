@@ -52,7 +52,7 @@ export function ThemeToggle() {
     <div data-bug-id="BZ-084">
       <button
         onClick={handleToggle}
-        className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none bg-gray-200 dark:bg-blue-600"
+        className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none bg-zinc-200 dark:bg-blue-600"
         role="switch"
         aria-checked={isDark}
         aria-label="Toggle dark mode"

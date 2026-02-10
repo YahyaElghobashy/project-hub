@@ -201,7 +201,7 @@ export function SearchPage() {
     <div className="p-6 lg:p-8 max-w-4xl mx-auto">
       {/* Search Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Search</h1>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">Search</h1>
         {/* BUG:BZ-010 - Debounce trims last character from search query */}
         <div className="flex gap-4" data-bug-id="BZ-010">
           <div className="flex-1">
@@ -218,7 +218,7 @@ export function SearchPage() {
             data-bug-id="BZ-094"
             value={typeFilter}
             onChange={(e) => handleFilterChange(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Types</option>
             <option value="projects">Projects</option>
@@ -230,13 +230,13 @@ export function SearchPage() {
 
       {/* Keyboard shortcut hint */}
       {/* BUG:BZ-110 - Global shortcuts fire even when typing in input fields */}
-      <div className="mb-4 flex gap-2 text-xs text-gray-400 dark:text-gray-500" data-bug-id="BZ-110">
+      <div className="mb-4 flex gap-2 text-xs text-zinc-400 dark:text-zinc-500" data-bug-id="BZ-110">
         <span>Shortcuts:</span>
-        <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">D</kbd>
+        <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-700 rounded">D</kbd>
         <span>Dashboard</span>
-        <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">P</kbd>
+        <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-700 rounded">P</kbd>
         <span>Projects</span>
-        <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">T</kbd>
+        <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-700 rounded">T</kbd>
         <span>Team</span>
       </div>
 
@@ -244,10 +244,10 @@ export function SearchPage() {
       {!query && recentSearches.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">Recent Searches</h2>
+            <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Recent Searches</h2>
             <button
               onClick={clearRecentSearches}
-              className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
             >
               Clear
             </button>
@@ -257,7 +257,7 @@ export function SearchPage() {
               <button
                 key={index}
                 onClick={() => handleRecentSearch(search)}
-                className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                className="px-3 py-1.5 text-sm bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors"
               >
                 {search}
               </button>
@@ -278,21 +278,21 @@ export function SearchPage() {
         <div className="space-y-6">
           {results.length === 0 ? (
             <div className="text-center py-12">
-              <Search className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-              <p className="text-gray-500 dark:text-gray-400">No results found for "{query}"</p>
+              <Search className="w-12 h-12 mx-auto text-zinc-300 dark:text-zinc-600 mb-4" />
+              <p className="text-zinc-500 dark:text-zinc-400">No results found for "{query}"</p>
             </div>
           ) : (
             results.map((group) => (
               <div key={group.type}>
-                <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 uppercase">
+                <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-3 uppercase">
                   {group.type}
                 </h2>
-                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+                <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 divide-y divide-zinc-200 dark:divide-zinc-700">
                   {group.items.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => handleSelect(group.type, item)}
-                      className="w-full flex items-center gap-4 p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      className="w-full flex items-center gap-4 p-4 text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
                     >
                       {isProject(item) && (
                         <>
@@ -303,10 +303,10 @@ export function SearchPage() {
                             {getProjectIcon(item.icon)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 dark:text-white truncate">
+                            <p className="font-medium text-zinc-900 dark:text-white truncate">
                               {item.name}
                             </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                            <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">
                               {item.description}
                             </p>
                           </div>
@@ -318,14 +318,14 @@ export function SearchPage() {
 
                       {isTask(item) && (
                         <>
-                          <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                            <ClipboardList className="w-5 h-5 text-gray-500" />
+                          <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center flex-shrink-0">
+                            <ClipboardList className="w-5 h-5 text-zinc-500" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 dark:text-white truncate">
+                            <p className="font-medium text-zinc-900 dark:text-white truncate">
                               {item.title}
                             </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                            <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">
                               {item.description}
                             </p>
                           </div>
@@ -339,10 +339,10 @@ export function SearchPage() {
                         <>
                           <Avatar src={item.avatar} name={item.name} size="md" />
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 dark:text-white truncate">
+                            <p className="font-medium text-zinc-900 dark:text-white truncate">
                               {item.name}
                             </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                            <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">
                               {item.email}
                             </p>
                           </div>
@@ -361,12 +361,12 @@ export function SearchPage() {
       {/* Quick Tips */}
       {!query && recentSearches.length === 0 && (
         <div className="text-center py-12">
-          <Search className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-          <p className="text-gray-500 dark:text-gray-400 mb-2">
+          <Search className="w-12 h-12 mx-auto text-zinc-300 dark:text-zinc-600 mb-4" />
+          <p className="text-zinc-500 dark:text-zinc-400 mb-2">
             Search for projects, tasks, or team members
           </p>
-          <p className="text-sm text-gray-400 dark:text-gray-500">
-            Tip: Use <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs">⌘K</kbd> to open search from anywhere
+          <p className="text-sm text-zinc-400 dark:text-zinc-500">
+            Tip: Use <kbd className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-700 rounded text-xs">⌘K</kbd> to open search from anywhere
           </p>
         </div>
       )}

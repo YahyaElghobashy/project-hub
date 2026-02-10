@@ -141,26 +141,26 @@ export function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }: SidebarPro
         className={`
           fixed lg:static inset-y-0 left-0 z-50
           flex flex-col
-          bg-white dark:bg-gray-800
-          border-r border-gray-200 dark:border-gray-700
+          bg-white dark:bg-zinc-800
+          border-r border-zinc-200 dark:border-zinc-700
           transition-all duration-300 ease-in-out
           ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}
           ${isMobileOpen ? 'w-64 translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-zinc-200 dark:border-zinc-700">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <Zap className="w-5 h-5 text-white" />
             </div>
             {!isCollapsed && (
-              <span className="text-lg font-bold text-gray-900 dark:text-white">ProjectHub</span>
+              <span className="text-lg font-bold text-zinc-900 dark:text-white">ProjectHub</span>
             )}
           </div>
           <button
             onClick={onMobileClose}
-            className="lg:hidden p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="lg:hidden p-1 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
           >
             <X className="w-5 h-5" />
           </button>
@@ -197,7 +197,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }: SidebarPro
                   ${
                     isItemActive
                       ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700'
                   }
                 `}
                 title={isCollapsed ? item.label : undefined}
@@ -211,13 +211,13 @@ export function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }: SidebarPro
 
         {/* Footer */}
         {!isCollapsed && (
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Storage Used</p>
-              <div className="mt-2 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+          <div className="p-4 border-t border-zinc-200 dark:border-zinc-700">
+            <div className="px-3 py-2 bg-zinc-50 dark:bg-zinc-700/50 rounded-lg">
+              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Storage Used</p>
+              <div className="mt-2 h-1.5 bg-zinc-200 dark:bg-zinc-600 rounded-full overflow-hidden">
                 <div className="h-full w-3/4 bg-blue-600 rounded-full" />
               </div>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">7.5 GB of 10 GB</p>
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">7.5 GB of 10 GB</p>
             </div>
           </div>
         )}

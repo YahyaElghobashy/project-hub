@@ -492,7 +492,7 @@ export function ProjectsPage() {
             handleSelectRow(project.id);
           }}
           onClick={(e) => e.stopPropagation()}
-          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          className="rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
         />
       ),
     },
@@ -511,9 +511,9 @@ export function ProjectsPage() {
             {getProjectIcon(project.icon, 'w-4 h-4')}
           </div>
           <div>
-            <p className="font-medium text-gray-900 dark:text-white">{project.name}</p>
+            <p className="font-medium text-zinc-900 dark:text-white">{project.name}</p>
             {/* BUG:BZ-039 - No truncation or max-width causes long descriptions to overflow */}
-            <p className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
               {project.description}
             </p>
           </div>
@@ -540,7 +540,7 @@ export function ProjectsPage() {
                 }}
                 onBlur={() => setEditingCell(null)}
                 onClick={(e) => e.stopPropagation()}
-                className="px-2 py-1 text-sm border border-blue-400 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none"
+                className="px-2 py-1 text-sm border border-blue-400 rounded bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white focus:outline-none"
               >
                 <option value="active">Active</option>
                 <option value="on_hold">On Hold</option>
@@ -574,10 +574,10 @@ export function ProjectsPage() {
         return owner ? (
           <div className="flex items-center gap-2">
             <Avatar src={owner.avatar} name={owner.name} size="xs" />
-            <span className="text-sm text-gray-900 dark:text-white">{owner.name}</span>
+            <span className="text-sm text-zinc-900 dark:text-white">{owner.name}</span>
           </div>
         ) : (
-          <span className="text-gray-400">-</span>
+          <span className="text-zinc-400">-</span>
         );
       },
     },
@@ -589,14 +589,14 @@ export function ProjectsPage() {
       // BUG:BZ-046 - Progress column with optimistic update capability
       render: (project: Project) => (
         <div className="flex items-center gap-2" data-bug-id="BZ-046">
-          <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="w-24 h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full"
               style={{ width: `${project.progress}%`, backgroundColor: project.color }}
             />
           </div>
           <span
-            className="text-sm text-gray-500 dark:text-gray-400 cursor-pointer hover:text-blue-600"
+            className="text-sm text-zinc-500 dark:text-zinc-400 cursor-pointer hover:text-blue-600"
             title="Click to mark complete"
             onClick={(e) => {
               e.stopPropagation();
@@ -616,7 +616,7 @@ export function ProjectsPage() {
       sortable: true,
       width: columnWidths['updatedAt'] ? `${columnWidths['updatedAt']}px` : undefined,
       render: (project: Project) => (
-        <span className="text-sm text-gray-500 dark:text-gray-400">
+        <span className="text-sm text-zinc-500 dark:text-zinc-400">
           {new Date(project.updatedAt).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -632,7 +632,7 @@ export function ProjectsPage() {
       sortable: true,
       width: columnWidths['createdAt'] ? `${columnWidths['createdAt']}px` : undefined,
       render: (project: Project) => (
-        <span className="text-sm text-gray-500 dark:text-gray-400" data-bug-id="BZ-052">
+        <span className="text-sm text-zinc-500 dark:text-zinc-400" data-bug-id="BZ-052">
           {/* BUG:BZ-052 - Display uses local time, but the Table sort compares raw ISO strings (UTC).
               Records created at 11pm EST (4am UTC next day) appear out of order when sorted. */}
           {new Date(project.createdAt).toLocaleDateString('en-US', {
@@ -655,7 +655,7 @@ export function ProjectsPage() {
           {/* BUG:BZ-054 - These buttons can be accidentally triggered by keyboard navigation
               (Enter/Space while focus is on the row or near the button) */}
           <button
-            className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors focus:outline-none"
+            className="p-1 text-zinc-400 hover:text-red-600 rounded transition-colors focus:outline-none"
             title="Archive project"
             onClick={(e) => {
               e.stopPropagation();
@@ -821,15 +821,15 @@ export function ProjectsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Projects</h1>
-          <p className="mt-1 text-gray-600 dark:text-gray-400">
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Projects</h1>
+          <p className="mt-1 text-zinc-600 dark:text-zinc-400">
             Manage and track all your projects
           </p>
         </div>
         <div className="flex items-center gap-3">
           {selectedIds.size > 0 && (
             <div className="flex items-center gap-2" data-bug-id="BZ-042">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="text-sm text-zinc-600 dark:text-zinc-400">
                 {/* BUG:BZ-042 - Shows total filtered count but only visible rows are selected */}
                 {filteredProjects.length} items selected
               </span>
@@ -878,7 +878,7 @@ export function ProjectsPage() {
             // BUG:BZ-045 - Status filter change resets column widths
             setColumnWidths({});
           }}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">All Statuses</option>
           <option value="active">Active</option>
@@ -894,7 +894,7 @@ export function ProjectsPage() {
             // BUG:BZ-045 - Priority filter change resets column widths
             setColumnWidths({});
           }}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">All Priorities</option>
           <option value="high">High</option>
@@ -903,12 +903,12 @@ export function ProjectsPage() {
         </select>
         {/* BUG:BZ-047 - Virtual scroll toggle for large datasets */}
         {filteredProjects.length > 50 && (
-          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+          <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
             <input
               type="checkbox"
               checked={useVirtualScroll}
               onChange={(e) => setUseVirtualScroll(e.target.checked)}
-              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
             />
             Virtual scroll
           </label>
@@ -918,29 +918,29 @@ export function ProjectsPage() {
       {/* Table */}
       {/* BUG:BZ-049 - Real-time update notification count (no visual indicator, just inserts at top) */}
       {realtimeProjects.length > 0 && (
-        <div className="mb-2 text-xs text-gray-400" data-bug-id="BZ-049">
+        <div className="mb-2 text-xs text-zinc-400" data-bug-id="BZ-049">
           {realtimeProjects.length} new update{realtimeProjects.length !== 1 ? 's' : ''} synced
         </div>
       )}
       {/* BUG:BZ-103 - data-table-copyable marks this table for the copy handler that strips structure */}
       <div data-bug-id="BZ-103" data-table-copyable>
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700" data-bug-id="BZ-041">
+      <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700" data-bug-id="BZ-041">
         {/* BUG:BZ-045 - Column resize handles in header */}
-        <div className="flex items-center px-4 py-2 border-b border-gray-200 dark:border-gray-700" data-bug-id="BZ-045">
+        <div className="flex items-center px-4 py-2 border-b border-zinc-200 dark:border-zinc-700" data-bug-id="BZ-045">
           <input
             type="checkbox"
             checked={allVisibleSelected}
             onChange={(e) => handleSelectAll(e.target.checked)}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
           />
-          <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">
+          <span className="ml-3 text-sm text-zinc-500 dark:text-zinc-400">
             {selectedIds.size > 0
               ? `${selectedIds.size} selected`
               : 'Select all'}
           </span>
           <div className="ml-auto flex items-center gap-2">
             {Object.keys(columnWidths).length > 0 && (
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-zinc-400">
                 Columns resized
               </span>
             )}
@@ -1010,7 +1010,7 @@ export function ProjectsPage() {
             onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
               Description
             </label>
             <textarea
@@ -1018,7 +1018,7 @@ export function ProjectsPage() {
               value={newProject.description}
               onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="flex justify-end gap-3 pt-4">

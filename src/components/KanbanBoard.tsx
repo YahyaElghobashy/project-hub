@@ -11,7 +11,7 @@ interface KanbanBoardProps {
 }
 
 const columns: { id: TaskStatus; title: string; color: string }[] = [
-  { id: 'todo', title: 'To Do', color: 'bg-gray-400' },
+  { id: 'todo', title: 'To Do', color: 'bg-zinc-400' },
   { id: 'in_progress', title: 'In Progress', color: 'bg-blue-500' },
   { id: 'done', title: 'Done', color: 'bg-green-500' },
 ];
@@ -88,7 +88,7 @@ export function KanbanBoard({ tasks, onTaskClick }: KanbanBoardProps) {
           key={column.id}
           className={`
             flex-shrink-0 w-80 flex flex-col
-            bg-gray-100 dark:bg-gray-800/50 rounded-lg
+            bg-zinc-100 dark:bg-zinc-800/50 rounded-lg
             transition-colors duration-200
             ${dragOverColumn === column.id ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}
           `}
@@ -99,8 +99,8 @@ export function KanbanBoard({ tasks, onTaskClick }: KanbanBoardProps) {
           {/* Column Header */}
           <div className="flex items-center gap-2 px-3 py-3">
             <span className={`w-2 h-2 rounded-full ${column.color}`} />
-            <h3 className="font-medium text-gray-900 dark:text-white">{column.title}</h3>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+            <h3 className="font-medium text-zinc-900 dark:text-white">{column.title}</h3>
+            <span className="text-sm text-zinc-500 dark:text-zinc-400">
               {getTasksByStatus(column.id).length}
             </span>
           </div>
@@ -118,13 +118,13 @@ export function KanbanBoard({ tasks, onTaskClick }: KanbanBoardProps) {
                   onDragEnd={handleDragEnd}
                   onClick={() => onTaskClick?.(task)}
                   className={`
-                    bg-white dark:bg-gray-700 rounded-lg p-3 shadow-sm
-                    border border-gray-200 dark:border-gray-600
+                    bg-white dark:bg-zinc-700 rounded-lg p-3 shadow-sm
+                    border border-zinc-200 dark:border-zinc-600
                     cursor-pointer hover:shadow-md transition-shadow
                     ${draggedTask?.id === task.id ? 'opacity-50' : ''}
                   `}
                 >
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  <h4 className="text-sm font-medium text-zinc-900 dark:text-white mb-2">
                     {task.title}
                   </h4>
 
@@ -133,7 +133,7 @@ export function KanbanBoard({ tasks, onTaskClick }: KanbanBoardProps) {
                       {task.tags.slice(0, 3).map((tag) => (
                         <span
                           key={tag}
-                          className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded"
+                          className="px-2 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-600 text-zinc-600 dark:text-zinc-300 rounded"
                         >
                           {tag}
                         </span>
@@ -148,7 +148,7 @@ export function KanbanBoard({ tasks, onTaskClick }: KanbanBoardProps) {
 
                     <div className="flex items-center gap-2">
                       {task.dueDate && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400">
                           {new Date(task.dueDate).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
@@ -165,7 +165,7 @@ export function KanbanBoard({ tasks, onTaskClick }: KanbanBoardProps) {
             })}
 
             {getTasksByStatus(column.id).length === 0 && (
-              <div className="flex items-center justify-center h-24 text-sm text-gray-400 dark:text-gray-500">
+              <div className="flex items-center justify-center h-24 text-sm text-zinc-400 dark:text-zinc-500">
                 No tasks
               </div>
             )}

@@ -78,15 +78,15 @@ export function NotificationPanel() {
         ref={panelRef}
         className={`
           fixed top-0 right-0 h-full w-full sm:w-96
-          bg-white dark:bg-gray-800
+          bg-white dark:bg-zinc-800
           shadow-xl z-50
           transform transition-transform duration-300 ease-in-out
           ${isPanelOpen ? 'translate-x-0' : 'translate-x-full'}
         `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Notifications</h2>
+        <div className="flex items-center justify-between px-4 py-4 border-b border-zinc-200 dark:border-zinc-700">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Notifications</h2>
           <div className="flex items-center gap-2">
             <button
               onClick={markAllAsRead}
@@ -96,7 +96,7 @@ export function NotificationPanel() {
             </button>
             <button
               onClick={closePanel}
-              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700"
             >
               <X className="w-5 h-5" />
             </button>
@@ -107,8 +107,8 @@ export function NotificationPanel() {
         <div className="overflow-y-auto h-[calc(100%-64px)]">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Bell className="w-12 h-12 text-gray-300 dark:text-gray-600" />
-              <p className="mt-4 text-gray-500 dark:text-gray-400">No notifications yet</p>
+              <Bell className="w-12 h-12 text-zinc-300 dark:text-zinc-600" />
+              <p className="mt-4 text-zinc-500 dark:text-zinc-400">No notifications yet</p>
             </div>
           ) : (
             notifications.slice(0, 30).map((notification) => (
@@ -116,8 +116,8 @@ export function NotificationPanel() {
                 key={notification.id}
                 className={`
                   group flex gap-3 px-4 py-3 cursor-pointer
-                  hover:bg-gray-50 dark:hover:bg-gray-700/50
-                  border-b border-gray-100 dark:border-gray-700/50
+                  hover:bg-zinc-50 dark:hover:bg-zinc-700/50
+                  border-b border-zinc-100 dark:border-zinc-700/50
                   ${!notification.read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}
                 `}
                 onClick={() => handleNotificationClick(notification)}
@@ -130,17 +130,17 @@ export function NotificationPanel() {
                       size="sm"
                     />
                   ) : (
-                    <div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                      <Bell className="w-4 h-4 text-gray-500" />
+                    <div className="w-8 h-8 bg-zinc-200 dark:bg-zinc-600 rounded-full flex items-center justify-center">
+                      <Bell className="w-4 h-4 text-zinc-500" />
                     </div>
                   )}
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900 dark:text-white">
+                  <p className="text-sm text-zinc-900 dark:text-white">
                     {notification.message}
                   </p>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                     {formatTime(notification.createdAt)}
                   </p>
                 </div>
@@ -154,7 +154,7 @@ export function NotificationPanel() {
                       e.stopPropagation();
                       deleteNotification(notification.id);
                     }}
-                    className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <X className="w-4 h-4" />
                   </button>

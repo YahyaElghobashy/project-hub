@@ -416,8 +416,8 @@ export function TeamPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Team Members</h1>
-          <p className="mt-1 text-gray-600 dark:text-gray-400">
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Team Members</h1>
+          <p className="mt-1 text-zinc-600 dark:text-zinc-400">
             Manage your team and their roles
           </p>
         </div>
@@ -443,23 +443,23 @@ export function TeamPage() {
           <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700" data-bug-id="BZ-062">
+        <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 divide-y divide-zinc-200 dark:divide-zinc-700" data-bug-id="BZ-062">
           {filteredMembers.length === 0 ? (
-            <div className="p-12 text-center text-gray-500 dark:text-gray-400">
+            <div className="p-12 text-center text-zinc-500 dark:text-zinc-400">
               No team members found
             </div>
           ) : (
             filteredMembers.map((member) => (
               <div
                 key={member.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
               >
                 <div className="flex items-center gap-4">
                   <Avatar src={member.avatar} name={member.name} size="md" />
                   <div>
-                    <h3 className="font-medium text-gray-900 dark:text-white">{member.name}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{member.email}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    <h3 className="font-medium text-zinc-900 dark:text-white">{member.name}</h3>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">{member.email}</p>
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
                       Joined {formatDate(member.createdAt)}
                     </p>
                   </div>
@@ -470,7 +470,7 @@ export function TeamPage() {
                   <select
                     value={member.role}
                     onChange={(e) => handleRoleChange(member.id, e.target.value as Role)}
-                    className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-3 py-1.5 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="admin">Admin</option>
                     <option value="member">Member</option>
@@ -488,7 +488,7 @@ export function TeamPage() {
                     <button
                       data-bug-id="BZ-066"
                       onClick={() => setMemberToRemove(member.id)}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      className="p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -501,24 +501,24 @@ export function TeamPage() {
       )}
 
       {/* Role Legend */}
-      <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
-        <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Role Permissions</h3>
+      <div className="mt-6 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
+        <h3 className="text-sm font-medium text-zinc-900 dark:text-white mb-3">Role Permissions</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <Badge variant="info" className="mb-2">Admin</Badge>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
               Full access to all features, can manage team members and billing
             </p>
           </div>
           <div>
             <Badge variant="default" className="mb-2">Member</Badge>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
               Can create and edit projects, manage tasks, and collaborate
             </p>
           </div>
           <div>
             <Badge variant="warning" className="mb-2">Viewer</Badge>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
               Read-only access to projects and tasks, cannot make changes
             </p>
           </div>
@@ -526,9 +526,9 @@ export function TeamPage() {
       </div>
 
       {/* BUG:BZ-068 - Invite Links Management — cached validation persists after revocation */}
-      <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700" data-bug-id="BZ-068">
+      <div className="mt-6 p-4 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700" data-bug-id="BZ-068">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Pending Invite Links</h3>
+          <h3 className="text-sm font-medium text-zinc-900 dark:text-white">Pending Invite Links</h3>
           <button
             onClick={() => setShowInviteLinks(!showInviteLinks)}
             className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
@@ -539,20 +539,20 @@ export function TeamPage() {
         {showInviteLinks && (
           <div className="space-y-2">
             {inviteLinks.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
                 No invite links generated yet. Invite a member to create one.
               </p>
             ) : (
               inviteLinks.map((link) => (
                 <div
                   key={link.token}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-700/50 rounded-lg"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    <p className="text-sm font-medium text-zinc-900 dark:text-white truncate">
                       {link.email}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-mono truncate">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 font-mono truncate">
                       /join?token={link.token}
                     </p>
                   </div>
@@ -579,11 +579,11 @@ export function TeamPage() {
       </div>
 
       {/* BUG:BZ-069 - Security section — password change doesn't invalidate other sessions */}
-      <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700" data-bug-id="BZ-069">
+      <div className="mt-6 p-4 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700" data-bug-id="BZ-069">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white">Security</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <h3 className="text-sm font-medium text-zinc-900 dark:text-white">Security</h3>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
               Manage your password and active sessions
             </p>
           </div>
@@ -592,15 +592,15 @@ export function TeamPage() {
           </Button>
         </div>
         <div className="mt-3">
-          <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Active Sessions</p>
+          <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-2">Active Sessions</p>
           <div className="space-y-2">
             {activeSessions.map((session) => (
               <div key={session.sessionId} className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${session.isCurrent ? 'bg-green-500' : 'bg-gray-400'}`} />
-                  <span className="text-gray-700 dark:text-gray-300">{session.device}</span>
+                  <div className={`w-2 h-2 rounded-full ${session.isCurrent ? 'bg-green-500' : 'bg-zinc-400'}`} />
+                  <span className="text-zinc-700 dark:text-zinc-300">{session.device}</span>
                 </div>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
                   {session.isCurrent ? 'Current' : formatDate(session.lastActive)}
                 </span>
               </div>
@@ -625,13 +625,13 @@ export function TeamPage() {
             onChange={(e) => setInviteEmail(e.target.value)}
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
               Role
             </label>
             <select
               value={inviteRole}
               onChange={(e) => setInviteRole(e.target.value as Role)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="admin">Admin</option>
               <option value="member">Member</option>
@@ -657,7 +657,7 @@ export function TeamPage() {
         size="sm"
       >
         <div className="space-y-4">
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-zinc-600 dark:text-zinc-400">
             Are you sure you want to remove this member from the team? They will lose access to all projects.
           </p>
           <div className="flex justify-end gap-3">
@@ -703,7 +703,7 @@ export function TeamPage() {
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="Enter new password"
           />
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
             For security, other active sessions should be signed out after changing your password.
           </p>
           <div className="flex justify-end gap-3 pt-2">

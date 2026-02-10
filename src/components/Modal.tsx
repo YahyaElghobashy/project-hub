@@ -121,21 +121,21 @@ export function Modal({
         className={`
           w-full ${sizeStyles[size]}
           max-h-[80vh] overflow-hidden
-          bg-white dark:bg-gray-800
+          bg-white dark:bg-zinc-800
           rounded-xl shadow-xl
           transform transition-all
           animate-in fade-in zoom-in-95 duration-200
         `}
       >
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-700">
             {title && (
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h2>
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">{title}</h2>
             )}
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>

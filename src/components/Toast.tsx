@@ -83,17 +83,17 @@ function ToastItem({ toast, onRemove }: { toast: ToastMessage; onRemove: (id: st
   }, [toast.id, toast.duration, onRemove]);
 
   return (
-    // BUG:BZ-073 - Hardcoded bg-white, text-gray-900, border-gray-200 — no dark: variants
+    // BUG:BZ-073 - Hardcoded bg-white, text-zinc-900, border-zinc-200 — no dark: variants
     // This creates a bright white toast on dark backgrounds when dark mode is active
     <div
-      className="flex items-center gap-3 px-4 py-3 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[300px] max-w-md animate-in slide-in-from-right fade-in duration-300"
+      className="flex items-center gap-3 px-4 py-3 bg-white border border-zinc-200 rounded-lg shadow-lg min-w-[300px] max-w-md animate-in slide-in-from-right fade-in duration-300"
       role="alert"
     >
       {toastIconMap[toast.type]}
-      <p className="flex-1 text-sm text-gray-900">{toast.message}</p>
+      <p className="flex-1 text-sm text-zinc-900">{toast.message}</p>
       <button
         onClick={() => onRemove(toast.id)}
-        className="p-1 text-gray-400 hover:text-gray-600 rounded"
+        className="p-1 text-zinc-400 hover:text-zinc-600 rounded"
       >
         <X className="w-4 h-4" />
       </button>

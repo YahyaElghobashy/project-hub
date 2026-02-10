@@ -450,8 +450,8 @@ export function DashboardPage() {
     <div className="p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Dashboard</h1>
+        <p className="mt-1 text-zinc-600 dark:text-zinc-400">
           Welcome back! Here's what's happening with your projects.
         </p>
       </div>
@@ -508,9 +508,9 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* BUG:BZ-119 - N+1 API query: fetches each project detail individually */}
         {/* Project Progress */}
-        <div data-bug-id="BZ-119" className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div data-bug-id="BZ-119" className="lg:col-span-2 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Project Progress</h2>
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Project Progress</h2>
             <button
               onClick={() => navigate('/projects')}
               className="text-sm text-blue-600 hover:underline"
@@ -528,7 +528,7 @@ export function DashboardPage() {
               {activeProjects.slice(0, 5).map((project) => (
                 <div
                   key={project.id}
-                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
+                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700/50 cursor-pointer transition-colors"
                   onClick={() => navigate(`/projects/${project.id}`)}
                 >
                   <div
@@ -539,14 +539,14 @@ export function DashboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                      <h3 className="font-medium text-zinc-900 dark:text-white truncate">
                         {project.name}
                       </h3>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                      <span className="text-sm text-zinc-500 dark:text-zinc-400">
                         {project.progress}%
                       </span>
                     </div>
-                    <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div className="h-2 bg-zinc-100 dark:bg-zinc-700 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all"
                         style={{
@@ -563,8 +563,8 @@ export function DashboardPage() {
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
             Recent Activity
           </h2>
           <div className="space-y-4">
@@ -577,15 +577,15 @@ export function DashboardPage() {
                     size="sm"
                   />
                 ) : (
-                  <div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                    <Clock className="w-4 h-4 text-gray-500" />
+                  <div className="w-8 h-8 bg-zinc-200 dark:bg-zinc-600 rounded-full flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-zinc-500" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900 dark:text-white truncate">
+                  <p className="text-sm text-zinc-900 dark:text-white truncate">
                     {activity.message}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
                     {formatTime(activity.createdAt)}
                   </p>
                 </div>
@@ -597,15 +597,15 @@ export function DashboardPage() {
 
       {/* BUG:BZ-088 - Skeleton loader doesn't match real layout */}
       {/* Skeleton shows 3 cards per row, real content loads as 2 cards per row */}
-      <div data-bug-id="BZ-088" className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Performance Insights</h2>
+      <div data-bug-id="BZ-088" className="mt-6 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Performance Insights</h2>
         {insightsLoading ? (
           <div className="grid grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="animate-pulse">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-2" />
-                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-1" />
-                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-2/3 mb-2" />
+                <div className="h-8 bg-zinc-200 dark:bg-zinc-700 rounded w-1/2 mb-1" />
+                <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-3/4" />
               </div>
             ))}
           </div>
@@ -625,10 +625,10 @@ export function DashboardPage() {
             return (
               <div className="grid grid-cols-2 gap-4">
                 {insightsData.map((insight, i) => (
-                  <div key={i} className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{insight.title}</p>
-                    <p className="text-xl font-semibold text-gray-900 dark:text-white mt-1">{insight.value}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{insight.change}</p>
+                  <div key={i} className="p-3 bg-zinc-50 dark:bg-zinc-700/30 rounded-lg">
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">{insight.title}</p>
+                    <p className="text-xl font-semibold text-zinc-900 dark:text-white mt-1">{insight.value}</p>
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">{insight.change}</p>
                   </div>
                 ))}
               </div>
@@ -638,8 +638,8 @@ export function DashboardPage() {
       </div>
 
       {/* BUG:BZ-108 - Task Completion Trend chart with flickering tooltip */}
-      <div data-bug-id="BZ-108" className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Task Completion Trend</h2>
+      <div data-bug-id="BZ-108" className="mt-6 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Task Completion Trend</h2>
         <div className="relative">
           <svg
             ref={chartSvgRef}
@@ -659,7 +659,7 @@ export function DashboardPage() {
                   x2={CHART_WIDTH - CHART_PADDING}
                   y2={y}
                   stroke="currentColor"
-                  className="text-gray-200 dark:text-gray-700"
+                  className="text-zinc-200 dark:text-zinc-700"
                   strokeWidth={0.5}
                 />
               );
@@ -715,7 +715,7 @@ export function DashboardPage() {
                 x={point.x}
                 y={CHART_HEIGHT - 10}
                 textAnchor="middle"
-                className="fill-gray-500 dark:fill-gray-400"
+                className="fill-zinc-500 dark:fill-zinc-400"
                 fontSize={11}
               >
                 {point.label}
@@ -726,14 +726,14 @@ export function DashboardPage() {
           {/* BUG:BZ-108 - Tooltip that flickers between adjacent data points */}
           {chartTooltip && (
             <div
-              className="absolute pointer-events-none bg-gray-900 text-white text-xs rounded-lg px-3 py-1.5 shadow-lg transform -translate-x-1/2 -translate-y-full z-10"
+              className="absolute pointer-events-none bg-zinc-900 text-white text-xs rounded-lg px-3 py-1.5 shadow-lg transform -translate-x-1/2 -translate-y-full z-10"
               style={{
                 left: `${(chartTooltip.x / CHART_WIDTH) * 100}%`,
                 top: `${(chartTooltip.y / CHART_HEIGHT) * 100 - 5}%`,
               }}
             >
               <span className="font-medium">{chartTooltip.point.label}</span>: {chartTooltip.point.value} tasks
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 w-2 h-2 bg-gray-900 rotate-45" />
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 w-2 h-2 bg-zinc-900 rotate-45" />
             </div>
           )}
         </div>
@@ -749,8 +749,8 @@ export function DashboardPage() {
       </div>
 
       {/* BUG:BZ-086 - Loading spinner never disappears */}
-      <div data-bug-id="BZ-086" className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Team Activity</h2>
+      <div data-bug-id="BZ-086" className="mt-6 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Team Activity</h2>
         {teamActivityLoading ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin h-6 w-6 border-4 border-blue-600 border-t-transparent rounded-full" />
@@ -758,13 +758,13 @@ export function DashboardPage() {
         ) : (
           <div className="space-y-3">
             {teamActivity.map((item) => (
-              <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700/50 last:border-0">
+              <div key={item.id} className="flex items-center justify-between py-2 border-b border-zinc-100 dark:border-zinc-700/50 last:border-0">
                 <div>
-                  <span className="font-medium text-gray-900 dark:text-white">{item.memberName}</span>
-                  <span className="text-gray-500 dark:text-gray-400"> {item.action} in </span>
+                  <span className="font-medium text-zinc-900 dark:text-white">{item.memberName}</span>
+                  <span className="text-zinc-500 dark:text-zinc-400"> {item.action} in </span>
                   <span className="text-blue-600 dark:text-blue-400">{item.project}</span>
                 </div>
-                <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap ml-4">
+                <span className="text-xs text-zinc-400 dark:text-zinc-500 whitespace-nowrap ml-4">
                   {formatTime(item.timestamp)}
                 </span>
               </div>
@@ -774,8 +774,8 @@ export function DashboardPage() {
       </div>
 
       {/* BUG:BZ-087 - Error state not shown on API failure */}
-      <div data-bug-id="BZ-087" className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Sprint Overview</h2>
+      <div data-bug-id="BZ-087" className="mt-6 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Sprint Overview</h2>
         {statsLoading ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin h-6 w-6 border-4 border-blue-600 border-t-transparent rounded-full" />
@@ -793,20 +793,20 @@ export function DashboardPage() {
         ) : dashboardStats ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{dashboardStats.avgCompletionTime}d</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Avg. Completion</p>
+              <p className="text-2xl font-bold text-zinc-900 dark:text-white">{dashboardStats.avgCompletionTime}d</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Avg. Completion</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{dashboardStats.activeSprintItems}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Active Items</p>
+              <p className="text-2xl font-bold text-zinc-900 dark:text-white">{dashboardStats.activeSprintItems}</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Active Items</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-red-600">{dashboardStats.blockedItems}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Blocked</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Blocked</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-orange-600">{dashboardStats.upcomingDeadlines}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Upcoming Deadlines</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Upcoming Deadlines</p>
             </div>
           </div>
         ) : (
@@ -818,21 +818,21 @@ export function DashboardPage() {
 
       {/* BUG:BZ-120 - Store causes cascading re-renders on unrelated state changes */}
       {/* Budget Overview Table */}
-      <div data-bug-id="BZ-120" className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+      <div data-bug-id="BZ-120" className="mt-6 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
         {logBZ120()}
         {/* Hidden span that forces dependency on notification store, causing re-renders */}
         <span className="hidden" aria-hidden="true" data-notification-count={notificationStore.unreadCount} data-render-count={renderCountRef.current} />
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Budget Overview</h2>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Budget Overview</h2>
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-500 dark:text-gray-400">Filter:</label>
+            <label className="text-sm text-zinc-500 dark:text-zinc-400">Filter:</label>
             <select
               value={budgetFilter}
               onChange={(e) => {
                 setBudgetFilter(e.target.value);
                 setBudgetPage(1);
               }}
-              className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="text-sm border border-zinc-300 dark:border-zinc-600 rounded-md px-2 py-1 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
             >
               <option value="all">All Status</option>
               <option value="on_track">On Track</option>
@@ -846,13 +846,13 @@ export function DashboardPage() {
         <div data-bug-id="BZ-037" className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Project</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Department</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Allocated</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Spent</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Remaining</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Status</th>
+              <tr className="border-b border-zinc-200 dark:border-zinc-700">
+                <th className="text-left py-3 px-4 font-medium text-zinc-500 dark:text-zinc-400">Project</th>
+                <th className="text-left py-3 px-4 font-medium text-zinc-500 dark:text-zinc-400">Department</th>
+                <th className="text-right py-3 px-4 font-medium text-zinc-500 dark:text-zinc-400">Allocated</th>
+                <th className="text-right py-3 px-4 font-medium text-zinc-500 dark:text-zinc-400">Spent</th>
+                <th className="text-right py-3 px-4 font-medium text-zinc-500 dark:text-zinc-400">Remaining</th>
+                <th className="text-left py-3 px-4 font-medium text-zinc-500 dark:text-zinc-400">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -877,12 +877,12 @@ export function DashboardPage() {
               {paginatedBudget.map((entry) => (
                 <tr
                   key={entry.id}
-                  className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                  className="border-b border-zinc-100 dark:border-zinc-700/50 hover:bg-zinc-50 dark:hover:bg-zinc-700/30"
                 >
-                  <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">{entry.projectName}</td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{entry.department}</td>
+                  <td className="py-3 px-4 text-zinc-900 dark:text-white font-medium">{entry.projectName}</td>
+                  <td className="py-3 px-4 text-zinc-600 dark:text-zinc-300">{entry.department}</td>
                   {/* BUG:BZ-040 - Currency displayed without proper formatting */}
-                  <td className="py-3 px-4 text-right text-gray-900 dark:text-white" data-bug-id="BZ-040">
+                  <td className="py-3 px-4 text-right text-zinc-900 dark:text-white" data-bug-id="BZ-040">
                     {(() => {
                       if (typeof window !== 'undefined') {
                         window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
@@ -899,10 +899,10 @@ export function DashboardPage() {
                     })()}
                     {entry.allocated}
                   </td>
-                  <td className="py-3 px-4 text-right text-gray-900 dark:text-white">
+                  <td className="py-3 px-4 text-right text-zinc-900 dark:text-white">
                     {entry.spent}
                   </td>
-                  <td className={`py-3 px-4 text-right ${entry.remaining < 0 ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>
+                  <td className={`py-3 px-4 text-right ${entry.remaining < 0 ? 'text-red-600' : 'text-zinc-900 dark:text-white'}`}>
                     {entry.remaining}
                   </td>
                   <td className="py-3 px-4">
@@ -923,11 +923,11 @@ export function DashboardPage() {
 
             {/* BUG:BZ-050 - Aggregation row shows null/NaN after filter */}
             <tfoot data-bug-id="BZ-050">
-              <tr className="border-t-2 border-gray-300 dark:border-gray-600 font-semibold">
-                <td className="py-3 px-4 text-gray-900 dark:text-white" colSpan={2}>
+              <tr className="border-t-2 border-zinc-300 dark:border-zinc-600 font-semibold">
+                <td className="py-3 px-4 text-zinc-900 dark:text-white" colSpan={2}>
                   Totals
                 </td>
-                <td className="py-3 px-4 text-right text-gray-900 dark:text-white">
+                <td className="py-3 px-4 text-right text-zinc-900 dark:text-white">
                   {(() => {
                     const val = budgetAggregations.totalAllocated;
                     if (val === null || val === undefined) {
@@ -946,10 +946,10 @@ export function DashboardPage() {
                     return val ?? NaN;
                   })()}
                 </td>
-                <td className="py-3 px-4 text-right text-gray-900 dark:text-white">
+                <td className="py-3 px-4 text-right text-zinc-900 dark:text-white">
                   {budgetAggregations.totalSpent ?? NaN}
                 </td>
-                <td className="py-3 px-4 text-right text-gray-900 dark:text-white">
+                <td className="py-3 px-4 text-right text-zinc-900 dark:text-white">
                   {budgetAggregations.totalRemaining ?? NaN}
                 </td>
                 <td className="py-3 px-4" />
@@ -959,7 +959,7 @@ export function DashboardPage() {
         </div>
 
         {/* BUG:BZ-051 - Floating point display rounding inconsistency */}
-        <div data-bug-id="BZ-051" className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/50 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+        <div data-bug-id="BZ-051" className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-700/50 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
           <span>
             {(() => {
               // Check if floating point error is visible
@@ -985,7 +985,7 @@ export function DashboardPage() {
 
         {/* BUG:BZ-036 - Pagination shows wrong total (unfiltered count instead of filtered) */}
         <div data-bug-id="BZ-036" className="mt-4 flex items-center justify-between">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
             {(() => {
               if (budgetFilter !== 'all' && totalBudgetCount !== filteredBudget.length) {
                 if (typeof window !== 'undefined') {
@@ -1008,14 +1008,14 @@ export function DashboardPage() {
             <button
               onClick={() => setBudgetPage((p) => Math.max(1, p - 1))}
               disabled={budgetPage === 1}
-              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-700"
+              className="px-3 py-1 text-sm border border-zinc-300 dark:border-zinc-600 rounded-md disabled:opacity-50 hover:bg-zinc-50 dark:hover:bg-zinc-700"
             >
               Previous
             </button>
             <button
               onClick={() => setBudgetPage((p) => Math.min(totalBudgetPages, p + 1))}
               disabled={budgetPage >= totalBudgetPages}
-              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-700"
+              className="px-3 py-1 text-sm border border-zinc-300 dark:border-zinc-600 rounded-md disabled:opacity-50 hover:bg-zinc-50 dark:hover:bg-zinc-700"
             >
               Next
             </button>
@@ -1024,9 +1024,9 @@ export function DashboardPage() {
       </div>
 
       {/* Featured Projects — BZ-076: Images cause layout shift when loading */}
-      <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+      <div className="mt-6 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Featured Projects</h2>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Featured Projects</h2>
           <button
             onClick={() => navigate('/projects')}
             className="text-sm text-blue-600 hover:underline"
@@ -1053,8 +1053,8 @@ export function DashboardPage() {
           styles injected by popular browser extensions (Grammarly, ad blockers).
           The grid layout relies on flex-basis calculations that break when extensions
           add their own styles to elements matching common selectors. */}
-      <div data-bug-id="BZ-112" className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Integration Status</h2>
+      <div data-bug-id="BZ-112" className="mt-6 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Integration Status</h2>
         {/* BUG:BZ-112 - The data-gramm attribute and contentEditable trigger Grammarly injection.
             The "sponsored" and "ad-slot" class names trigger ad blocker hiding rules.
             Both scenarios silently break the grid layout for affected users. */}
@@ -1070,7 +1070,7 @@ export function DashboardPage() {
           ].map((integration) => (
             <div
               key={integration.name}
-              className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 relative"
+              className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-700 relative"
               data-gramm="false"
               data-gramm_editor="false"
               contentEditable={false}
@@ -1083,7 +1083,7 @@ export function DashboardPage() {
                 >
                   {integration.name[0]}
                 </div>
-                <span className="font-medium text-gray-900 dark:text-white text-sm">
+                <span className="font-medium text-zinc-900 dark:text-white text-sm">
                   {integration.name}
                 </span>
               </div>
@@ -1092,7 +1092,7 @@ export function DashboardPage() {
                   integration.status === 'Connected' ? 'bg-green-500' :
                   integration.status === 'Syncing' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'
                 }`} />
-                <span className="text-xs text-gray-500 dark:text-gray-400">{integration.status}</span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">{integration.status}</span>
               </div>
               {/* Hidden element with class names that ad blockers target —
                   when hidden by extension CSS, it collapses the parent card's height */}
@@ -1150,44 +1150,44 @@ export function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
+      <div className="mt-6 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <button
             onClick={() => navigate('/projects')}
-            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
           >
             <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-blue-600">
               <Plus className="w-5 h-5" />
             </div>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">New Project</span>
+            <span className="text-sm font-medium text-zinc-900 dark:text-white">New Project</span>
           </button>
           <button
             onClick={() => navigate('/team')}
-            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
           >
             <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center text-green-600">
               <UserPlus className="w-5 h-5" />
             </div>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">Invite Member</span>
+            <span className="text-sm font-medium text-zinc-900 dark:text-white">Invite Member</span>
           </button>
           <button
             onClick={() => navigate('/search')}
-            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
           >
             <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center text-purple-600">
               <Search className="w-5 h-5" />
             </div>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">Search</span>
+            <span className="text-sm font-medium text-zinc-900 dark:text-white">Search</span>
           </button>
           <button
             onClick={() => navigate('/settings')}
-            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
           >
             <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center text-orange-600">
               <Settings className="w-5 h-5" />
             </div>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">Settings</span>
+            <span className="text-sm font-medium text-zinc-900 dark:text-white">Settings</span>
           </button>
         </div>
       </div>

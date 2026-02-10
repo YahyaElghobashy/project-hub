@@ -337,8 +337,8 @@ export function SettingsPage() {
     <div className="p-6 lg:p-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Settings</h1>
+        <p className="mt-1 text-zinc-600 dark:text-zinc-400">
           Manage your account settings and preferences
         </p>
       </div>
@@ -356,7 +356,7 @@ export function SettingsPage() {
                 ${
                   activeTab === tab.id
                     ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    : 'text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700'
                 }
               `}
             >
@@ -434,7 +434,7 @@ export function SettingsPage() {
               <Card>
                 <div id="profile-info">
                 </div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-6">
                   Profile Information
                 </h2>
                 <div className="flex items-center gap-4 mb-6">
@@ -443,7 +443,7 @@ export function SettingsPage() {
                     <Button variant="outline" size="sm">
                       Change Avatar
                     </Button>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                       JPG, PNG or GIF. Max 2MB.
                     </p>
                   </div>
@@ -468,7 +468,7 @@ export function SettingsPage() {
                   <div data-bug-id="BZ-004" className="w-full">
                     <label
                       htmlFor="country"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                      className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
                     >
                       Country
                     </label>
@@ -476,7 +476,7 @@ export function SettingsPage() {
                       id="country"
                       value={selectedCountry}
                       onChange={handleCountryChange}
-                      className="block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       {countries.map((c) => (
                         <option key={c.value} value={c.value}>
@@ -484,7 +484,7 @@ export function SettingsPage() {
                         </option>
                       ))}
                     </select>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                       Selected value: {selectedCountry}
                     </p>
                   </div>
@@ -493,7 +493,7 @@ export function SettingsPage() {
                   <div data-bug-id="BZ-005" className="w-full">
                     <label
                       htmlFor="start-date"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                      className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
                     >
                       Start Date
                     </label>
@@ -502,10 +502,10 @@ export function SettingsPage() {
                       type="date"
                       value={startDate}
                       onChange={handleDateChange}
-                      className="block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     {storedStartDate && (
-                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                         Stored as: {storedStartDate}
                       </p>
                     )}
@@ -515,7 +515,7 @@ export function SettingsPage() {
                   <div data-bug-id="BZ-009" className="w-full">
                     <label
                       htmlFor="bio"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                      className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
                     >
                       Bio
                     </label>
@@ -542,9 +542,9 @@ export function SettingsPage() {
                       placeholder="Tell us about yourself..."
                       rows={3}
                       style={{ height: '80px', overflow: 'hidden', resize: 'none' }}
-                      className="block w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                       Brief description for your profile. Max 500 characters.
                     </p>
                   </div>
@@ -566,24 +566,24 @@ export function SettingsPage() {
               {/* Team Activity — loads dynamically after delay, pushing content below it */}
               {activityLoaded && teamActivity.length > 0 && (
                 <Card>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
                     Recent Team Activity
                   </h2>
                   <div className="space-y-3">
                     {teamActivity.map((activity, i) => (
-                      <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                      <div key={i} className="flex items-center justify-between py-2 border-b border-zinc-100 dark:border-zinc-700 last:border-0">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xs font-medium text-blue-600 dark:text-blue-400">
                             {activity.user.split(' ').map(n => n[0]).join('')}
                           </div>
                           <div>
-                            <p className="text-sm text-gray-900 dark:text-white">
+                            <p className="text-sm text-zinc-900 dark:text-white">
                               <span className="font-medium">{activity.user}</span>{' '}
                               {activity.action}
                             </p>
                           </div>
                         </div>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">{activity.time}</span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400">{activity.time}</span>
                       </div>
                     ))}
                   </div>
@@ -593,7 +593,7 @@ export function SettingsPage() {
               {/* Billing & Referral Section */}
               <Card>
                 <div id="billing"></div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-6">
                   Billing & Referral
                 </h2>
                 <div className="space-y-4">
@@ -601,23 +601,23 @@ export function SettingsPage() {
                   <div data-bug-id="BZ-016" className="w-full">
                     <label
                       htmlFor="budget"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                      className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
                     >
                       Monthly Budget
                     </label>
                     <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 text-sm">$</span>
+                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-400 text-sm">$</span>
                       <input
                         id="budget"
                         type="text"
                         value={budgetInput}
                         onChange={handleBudgetChange}
                         placeholder="1,234.56"
-                        className="block w-full rounded-lg border border-gray-300 dark:border-gray-600 pl-7 pr-3 py-2 text-sm bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 pl-7 pr-3 py-2 text-sm bg-white dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
                     {parsedBudget !== null && (
-                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                         Parsed value: ${parsedBudget.toFixed(2)}
                       </p>
                     )}
@@ -627,10 +627,10 @@ export function SettingsPage() {
                   <div data-bug-id="BZ-015">
                     <label className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                           I have a referral code
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
                           Apply a referral code for a discount
                         </p>
                       </div>
@@ -642,7 +642,7 @@ export function SettingsPage() {
                           // BUG: Does NOT clear referralCode when unchecked
                           // The referral code stays in state and gets submitted
                         }}
-                        className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        className="w-5 h-5 text-blue-600 border-zinc-300 rounded focus:ring-blue-500"
                       />
                     </label>
                     {hasReferralCode && (
@@ -700,14 +700,14 @@ export function SettingsPage() {
                 <h2 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
                   Danger Zone
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
                   Irreversible and destructive actions for your account.
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 border border-red-200 dark:border-red-800 rounded-lg">
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">Delete Account</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Permanently delete your account and all data</p>
+                      <p className="text-sm font-medium text-zinc-900 dark:text-white">Delete Account</p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">Permanently delete your account and all data</p>
                     </div>
                     <Button variant="outline" size="sm" className="text-red-600 border-red-300 hover:bg-red-50">
                       Delete Account
@@ -715,8 +715,8 @@ export function SettingsPage() {
                   </div>
                   <div className="flex items-center justify-between p-3 border border-red-200 dark:border-red-800 rounded-lg">
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">Export Data</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Download all your data before deletion</p>
+                      <p className="text-sm font-medium text-zinc-900 dark:text-white">Export Data</p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">Download all your data before deletion</p>
                     </div>
                     <Button variant="outline" size="sm">
                       Export
@@ -730,12 +730,12 @@ export function SettingsPage() {
           {/* Notifications Tab */}
           {activeTab === 'notifications' && (
             <Card>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-6">
                 Notification Preferences
               </h2>
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                  <h3 className="text-sm font-medium text-zinc-900 dark:text-white mb-3">
                     Notification Channels
                   </h3>
                   <div className="space-y-3">
@@ -746,10 +746,10 @@ export function SettingsPage() {
                     ].map((item) => (
                       <label key={item.key} className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                             {item.label}
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400">
                             {item.description}
                           </p>
                         </div>
@@ -757,15 +757,15 @@ export function SettingsPage() {
                           type="checkbox"
                           checked={preferences[item.key as keyof typeof preferences] as boolean}
                           onChange={(e) => updatePreferences({ [item.key]: e.target.checked })}
-                          className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          className="w-5 h-5 text-blue-600 border-zinc-300 rounded focus:ring-blue-500"
                         />
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                <div className="border-t border-zinc-200 dark:border-zinc-700 pt-6">
+                  <h3 className="text-sm font-medium text-zinc-900 dark:text-white mb-3">
                     Notification Types
                   </h3>
                   <div className="space-y-3">
@@ -777,12 +777,12 @@ export function SettingsPage() {
                       { key: 'mentions', label: 'Mentions' },
                     ].map((item) => (
                       <label key={item.key} className="flex items-center justify-between">
-                        <span className="text-sm text-gray-700 dark:text-gray-300">{item.label}</span>
+                        <span className="text-sm text-zinc-700 dark:text-zinc-300">{item.label}</span>
                         <input
                           type="checkbox"
                           checked={preferences[item.key as keyof typeof preferences] as boolean}
                           onChange={(e) => updatePreferences({ [item.key]: e.target.checked })}
-                          className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          className="w-5 h-5 text-blue-600 border-zinc-300 rounded focus:ring-blue-500"
                         />
                       </label>
                     ))}
@@ -796,22 +796,22 @@ export function SettingsPage() {
           {activeTab === 'integrations' && (
             <div className="space-y-4">
               <Card className="mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
                   Connected Apps
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">
                   Connect your favorite tools to streamline your workflow
                 </p>
               </Card>
               {integrations.map((integration) => (
                 <Card key={integration.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="text-gray-700 dark:text-gray-300">{integration.icon}</div>
+                    <div className="text-zinc-700 dark:text-zinc-300">{integration.icon}</div>
                     <div>
-                      <h3 className="font-medium text-gray-900 dark:text-white">
+                      <h3 className="font-medium text-zinc-900 dark:text-white">
                         {integration.name}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400">
                         {integration.description}
                       </p>
                     </div>
@@ -830,12 +830,12 @@ export function SettingsPage() {
           {/* Appearance Tab — BZ-084: FOUC on theme toggle */}
           {activeTab === 'appearance' && (
             <Card>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-6">
                 Appearance
               </h2>
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                  <h3 className="text-sm font-medium text-zinc-900 dark:text-white mb-3">
                     Theme
                   </h3>
                   {/* BUG:BZ-084 - Both the card buttons and the toggle use toggleDarkMode
@@ -845,29 +845,29 @@ export function SettingsPage() {
                       onClick={() => { if (isDark) toggleDarkMode(); }}
                       className={`
                         flex-1 p-4 rounded-lg border-2 transition-colors
-                        ${!isDark ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'}
+                        ${!isDark ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-zinc-200 dark:border-zinc-700'}
                       `}
                     >
-                      <div className="w-full h-20 bg-white rounded-lg border border-gray-200 mb-2" />
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">Light</p>
+                      <div className="w-full h-20 bg-white rounded-lg border border-zinc-200 mb-2" />
+                      <p className="text-sm font-medium text-zinc-900 dark:text-white">Light</p>
                     </button>
                     <button
                       onClick={() => { if (!isDark) toggleDarkMode(); }}
                       className={`
                         flex-1 p-4 rounded-lg border-2 transition-colors
-                        ${isDark ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'}
+                        ${isDark ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-zinc-200 dark:border-zinc-700'}
                       `}
                     >
-                      <div className="w-full h-20 bg-gray-900 rounded-lg border border-gray-700 mb-2" />
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">Dark</p>
+                      <div className="w-full h-20 bg-zinc-900 rounded-lg border border-zinc-700 mb-2" />
+                      <p className="text-sm font-medium text-zinc-900 dark:text-white">Dark</p>
                     </button>
                   </div>
                 </div>
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <div className="border-t border-zinc-200 dark:border-zinc-700 pt-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Dark Mode</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Toggle dark mode on or off</p>
+                      <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Dark Mode</p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">Toggle dark mode on or off</p>
                     </div>
                     <ThemeToggle />
                   </div>

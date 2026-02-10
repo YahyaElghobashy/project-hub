@@ -156,26 +156,26 @@ function MetricCard({ metric }: { metric: PerformanceMetric }) {
     ? 'text-red-600'
     : metric.trend === 'up'
     ? 'text-green-600'
-    : 'text-gray-500';
+    : 'text-zinc-500';
 
   const trendIcon = metric.trend === 'up' ? '↑' : metric.trend === 'down' ? '↓' : '→';
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
-      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+    <div className="bg-white dark:bg-zinc-800 rounded-xl p-5 border border-zinc-200 dark:border-zinc-700 shadow-sm">
+      <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
         {/* BUG:BZ-118 - Uses lodash _.capitalize just for this one label formatting */}
         {_.capitalize(metric.label)}
       </p>
       <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-2xl font-bold text-gray-900 dark:text-white">
+        <span className="text-2xl font-bold text-zinc-900 dark:text-white">
           {metric.value.toLocaleString()}
         </span>
-        <span className="text-sm text-gray-500 dark:text-gray-400">{metric.unit}</span>
+        <span className="text-sm text-zinc-500 dark:text-zinc-400">{metric.unit}</span>
       </div>
       <div className={`mt-1 text-sm ${trendColor} flex items-center gap-1`}>
         <span>{trendIcon}</span>
         <span>{Math.abs(metric.change)}{typeof metric.change === 'number' && metric.unit === '%' ? 'pp' : metric.unit === 'ms' ? 'ms' : '%'}</span>
-        <span className="text-gray-400 dark:text-gray-500 ml-1">vs last week</span>
+        <span className="text-zinc-400 dark:text-zinc-500 ml-1">vs last week</span>
       </div>
     </div>
   );
@@ -232,19 +232,19 @@ function ResponseTimeTable({ data }: { data: ResponseTimeEntry[] }) {
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-200 dark:border-gray-700">
-            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Endpoint</th>
-            <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Method</th>
-            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">P50</th>
-            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">P95</th>
-            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">P99</th>
-            <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Req/min</th>
+          <tr className="border-b border-zinc-200 dark:border-zinc-700">
+            <th className="text-left py-3 px-4 font-medium text-zinc-500 dark:text-zinc-400">Endpoint</th>
+            <th className="text-left py-3 px-4 font-medium text-zinc-500 dark:text-zinc-400">Method</th>
+            <th className="text-right py-3 px-4 font-medium text-zinc-500 dark:text-zinc-400">P50</th>
+            <th className="text-right py-3 px-4 font-medium text-zinc-500 dark:text-zinc-400">P95</th>
+            <th className="text-right py-3 px-4 font-medium text-zinc-500 dark:text-zinc-400">P99</th>
+            <th className="text-right py-3 px-4 font-medium text-zinc-500 dark:text-zinc-400">Req/min</th>
           </tr>
         </thead>
         <tbody>
           {data.map((row, i) => (
-            <tr key={i} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-              <td className="py-3 px-4 font-mono text-gray-900 dark:text-gray-100">{row.endpoint}</td>
+            <tr key={i} className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
+              <td className="py-3 px-4 font-mono text-zinc-900 dark:text-zinc-100">{row.endpoint}</td>
               <td className="py-3 px-4">
                 <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
                   row.method === 'GET' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
@@ -252,10 +252,10 @@ function ResponseTimeTable({ data }: { data: ResponseTimeEntry[] }) {
                   'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
                 }`}>{row.method}</span>
               </td>
-              <td className="py-3 px-4 text-right font-mono text-gray-700 dark:text-gray-300">{row.p50}ms</td>
-              <td className="py-3 px-4 text-right font-mono text-gray-700 dark:text-gray-300">{row.p95}ms</td>
-              <td className={`py-3 px-4 text-right font-mono ${row.p99 > 500 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-700 dark:text-gray-300'}`}>{row.p99}ms</td>
-              <td className="py-3 px-4 text-right font-mono text-gray-700 dark:text-gray-300">{row.requestsPerMin}</td>
+              <td className="py-3 px-4 text-right font-mono text-zinc-700 dark:text-zinc-300">{row.p50}ms</td>
+              <td className="py-3 px-4 text-right font-mono text-zinc-700 dark:text-zinc-300">{row.p95}ms</td>
+              <td className={`py-3 px-4 text-right font-mono ${row.p99 > 500 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}>{row.p99}ms</td>
+              <td className="py-3 px-4 text-right font-mono text-zinc-700 dark:text-zinc-300">{row.requestsPerMin}</td>
             </tr>
           ))}
         </tbody>
@@ -274,13 +274,13 @@ function ErrorLogList({ logs, formatTime }: { logs: ErrorLogEntry[]; formatTime?
   return (
     <div className="space-y-2">
       {logs.map((log) => (
-        <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/30 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
+        <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-700/30 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 transition-colors">
           <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded mt-0.5 ${levelStyles[log.level]}`}>
             {log.level.toUpperCase()}
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-gray-900 dark:text-gray-100 font-mono truncate">{log.message}</p>
-            <div className="mt-1 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-zinc-900 dark:text-zinc-100 font-mono truncate">{log.message}</p>
+            <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">
               <span>{log.service}</span>
               <span>·</span>
               <span>{formatTime ? formatTime(log.timestamp) : new Date(log.timestamp).toLocaleTimeString()}</span>
@@ -454,7 +454,7 @@ export function PerformancePage() {
     // The 'InterDisplay' font uses font-display: block, which makes ALL text on
     // this page invisible until the font file downloads. On slow 3G connections,
     // text can be invisible for 3+ seconds while images and backgrounds load fine.
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900" style={{ fontFamily: "'InterDisplay', system-ui, sans-serif" }} data-bug-id="BZ-125">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" style={{ fontFamily: "'InterDisplay', system-ui, sans-serif" }} data-bug-id="BZ-125">
       {(() => {
         if (typeof window !== 'undefined') {
           window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
@@ -480,8 +480,8 @@ export function PerformancePage() {
         {/* BUG:BZ-121 - preferences object parsed from localStorage on every render */}
         <div className="flex items-center justify-between mb-8" data-bug-id="BZ-121">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Performance Monitoring</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Performance Monitoring</h1>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
               Real-time system health and performance metrics
               {preferences.compactMode && ' (compact)'}
             </p>
@@ -491,7 +491,7 @@ export function PerformancePage() {
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
               Live — {liveValue > 0 ? `${liveValue.toFixed(0)} req/s` : 'connecting...'}
             </div>
-            <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="flex rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden">
               {(['1h', '6h', '24h', '7d'] as const).map(range => (
                 <button
                   key={range}
@@ -499,7 +499,7 @@ export function PerformancePage() {
                   className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                     selectedTimeRange === range
                       ? 'bg-blue-600 text-white'
-                      : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
                   }`}
                 >
                   {range}
@@ -511,7 +511,7 @@ export function PerformancePage() {
 
         {/* BUG:BZ-122 - moment.js with ALL locales imported for trivial time formatting */}
         {/* Last updated timestamp using moment.js (500KB+ with all locales) */}
-        <div className="flex items-center justify-end mb-2 text-xs text-gray-400 dark:text-gray-500" data-bug-id="BZ-122">
+        <div className="flex items-center justify-end mb-2 text-xs text-zinc-400 dark:text-zinc-500" data-bug-id="BZ-122">
           <span>Last synced: {moment().subtract(2, 'minutes').fromNow()}</span>
           <span className="mx-2">·</span>
           <span>Next refresh: {moment().add(preferences.refreshInterval / 1000, 'seconds').format('HH:mm:ss')}</span>
@@ -540,16 +540,16 @@ export function PerformancePage() {
         </div>
 
         {/* Service Health */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-8">
-          <div className="p-5 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Service Health</h2>
+        <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm mb-8">
+          <div className="p-5 border-b border-zinc-200 dark:border-zinc-700">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Service Health</h2>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-gray-200 dark:bg-gray-700">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-zinc-200 dark:bg-zinc-700">
             {serviceHealthData.map(service => (
-              <div key={service.name} className="bg-white dark:bg-gray-800 p-4">
+              <div key={service.name} className="bg-white dark:bg-zinc-800 p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-gray-600 dark:text-gray-300">{service.icon}</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{service.name}</span>
+                  <span className="text-zinc-600 dark:text-zinc-300">{service.icon}</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{service.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full ${
@@ -563,7 +563,7 @@ export function PerformancePage() {
                     {service.status.charAt(0).toUpperCase() + service.status.slice(1)}
                   </span>
                 </div>
-                <div className="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                <div className="mt-2 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
                   <span>{service.uptime}% uptime</span>
                   <span>{service.latency}ms</span>
                 </div>
@@ -575,10 +575,10 @@ export function PerformancePage() {
         {/* BUG:BZ-100 - Event listener leak — containerWidth is read here, causing re-renders */}
         {/* Response Time & Throughput Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8" data-bug-id="BZ-100">
-          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-            <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Response Times</h2>
-              <span className="text-xs text-gray-400 dark:text-gray-500">
+          <div className="lg:col-span-2 bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm">
+            <div className="p-5 border-b border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Response Times</h2>
+              <span className="text-xs text-zinc-400 dark:text-zinc-500">
                 Viewport: {containerWidth}px
               </span>
             </div>
@@ -588,28 +588,28 @@ export function PerformancePage() {
           </div>
 
           {/* Throughput Chart Placeholder */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-            <div className="p-5 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Throughput</h2>
+          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm">
+            <div className="p-5 border-b border-zinc-200 dark:border-zinc-700">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Throughput</h2>
             </div>
             <div className="p-5">
               <div className="space-y-3">
                 {pollingData.slice(-8).map((d, i) => (
                   <div key={i} className="flex items-center gap-3">
-                    <span className="text-xs text-gray-400 dark:text-gray-500 w-16 font-mono">
+                    <span className="text-xs text-zinc-400 dark:text-zinc-500 w-16 font-mono">
                       {new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                     </span>
-                    <div className="flex-1 h-4 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div className="flex-1 h-4 bg-zinc-100 dark:bg-zinc-700 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-blue-500 rounded-full transition-all duration-500"
                         style={{ width: `${Math.min((d.count / 1300) * 100, 100)}%` }}
                       />
                     </div>
-                    <span className="text-xs font-mono text-gray-600 dark:text-gray-300 w-12 text-right">{d.count}</span>
+                    <span className="text-xs font-mono text-zinc-600 dark:text-zinc-300 w-12 text-right">{d.count}</span>
                   </div>
                 ))}
                 {pollingData.length === 0 && (
-                  <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">
+                  <div className="text-center py-8 text-zinc-400 dark:text-zinc-500 text-sm">
                     Waiting for data...
                   </div>
                 )}
@@ -620,15 +620,15 @@ export function PerformancePage() {
 
         {/* BUG:BZ-124 - useEffect without dependency array fires fetchAlerts on every render */}
         {/* Alert Summary — driven by the buggy useEffect that re-fetches every render */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-8" data-bug-id="BZ-124">
-          <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Active Alerts</h2>
+        <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm mb-8" data-bug-id="BZ-124">
+          <div className="p-5 border-b border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Active Alerts</h2>
             <span className="text-xs px-2 py-1 bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 rounded-full font-medium">
               {alertCount} active
             </span>
           </div>
           <div className="p-5">
-            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex items-center gap-4 text-sm text-zinc-600 dark:text-zinc-400">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 bg-red-500 rounded-full" />
                 <span>Critical: {Math.max(0, alertCount - 2)}</span>
@@ -647,9 +647,9 @@ export function PerformancePage() {
 
         {/* BUG:BZ-123 - console.log left in production, data logged on every render */}
         {/* Error Logs */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-8" data-bug-id="BZ-123">
-          <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Errors & Warnings</h2>
+        <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm mb-8" data-bug-id="BZ-123">
+          <div className="p-5 border-b border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Recent Errors & Warnings</h2>
             <span className="text-xs px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-full font-medium">
               {errorLogs.filter(l => l.level === 'error').length} errors
             </span>
@@ -661,15 +661,15 @@ export function PerformancePage() {
 
         {/* BUG:BZ-117 - Image Not Lazy Loaded Below Fold */}
         {/* Top Contributors — loads ALL 50 avatars eagerly even though only ~6 are visible */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-8" data-bug-id="BZ-117">
-          <div className="p-5 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Top Contributors — Performance Impact</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Team members ranked by code contributions affecting performance metrics</p>
+        <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm mb-8" data-bug-id="BZ-117">
+          <div className="p-5 border-b border-zinc-200 dark:border-zinc-700">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Top Contributors — Performance Impact</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Team members ranked by code contributions affecting performance metrics</p>
           </div>
           <div className="p-5">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
               {teamAvatarUrls.map((member) => (
-                <div key={member.id} className="flex flex-col items-center text-center p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                <div key={member.id} className="flex flex-col items-center text-center p-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700/30 transition-colors">
                   {/* BUG:BZ-117 - All 50 images load eagerly — no loading="lazy" attribute */}
                   {/* On throttled network, initial page load takes 12+ seconds because all */}
                   {/* 50 high-res avatar images are downloaded simultaneously */}
@@ -678,10 +678,10 @@ export function PerformancePage() {
                     alt={member.name}
                     width={64}
                     height={64}
-                    className="w-16 h-16 rounded-full border-2 border-gray-200 dark:border-gray-600"
+                    className="w-16 h-16 rounded-full border-2 border-zinc-200 dark:border-zinc-600"
                   />
-                  <span className="mt-2 text-xs font-medium text-gray-900 dark:text-gray-100 truncate w-full">{member.name}</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">{member.role}</span>
+                  <span className="mt-2 text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate w-full">{member.name}</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">{member.role}</span>
                   <span className="text-xs font-mono text-blue-600 dark:text-blue-400">{member.contributions} commits</span>
                 </div>
               ))}
@@ -706,9 +706,9 @@ export function PerformancePage() {
 
         {/* BUG:BZ-118 - Full lodash imported for one _.capitalize call */}
         {/* Project Health Overview */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm" data-bug-id="BZ-118">
-          <div className="p-5 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Project Health Overview</h2>
+        <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm" data-bug-id="BZ-118">
+          <div className="p-5 border-b border-zinc-200 dark:border-zinc-700">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Project Health Overview</h2>
           </div>
           <div className="p-5">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -720,9 +720,9 @@ export function PerformancePage() {
                 { id: 'ph5', name: 'Customer Portal', status: 'completed', progress: 100 },
                 { id: 'ph6', name: 'Cloud Migration', status: 'active', progress: 63 },
               ]).map((project) => (
-                <div key={project.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                <div key={project.id} className="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                    <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
                       {project.name}
                     </span>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
@@ -734,13 +734,13 @@ export function PerformancePage() {
                       {_.startCase(project.status.replace('_', ' '))}
                     </span>
                   </div>
-                  <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div className="h-2 bg-zinc-100 dark:bg-zinc-700 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-blue-500 rounded-full transition-all"
                       style={{ width: `${project.progress}%` }}
                     />
                   </div>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">{project.progress}% complete</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 block">{project.progress}% complete</span>
                 </div>
               ))}
             </div>

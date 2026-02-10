@@ -25,9 +25,9 @@ export function Card({
   return (
     <div
       className={`
-        bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700
+        bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700
         ${paddingStyles[padding]}
-        ${hover ? 'hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all cursor-pointer' : ''}
+        ${hover ? 'hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-600 transition-all cursor-pointer' : ''}
         ${className}
       `}
       onClick={onClick}
@@ -53,8 +53,8 @@ export function SummaryCard({ title, value, icon, trend, className = '' }: Summa
     <Card className={className}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
-          <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">{value}</p>
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">{title}</p>
+          <p className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-white">{value}</p>
           {trend && (
             <p
               className={`mt-1 text-sm flex items-center gap-1 ${

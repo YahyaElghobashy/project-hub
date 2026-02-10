@@ -497,7 +497,7 @@ export function Layout() {
 
   if (!user) {
     return (
-      <div data-bug-id="BZ-025" className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div data-bug-id="BZ-025" className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
         <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
       </div>
     );
@@ -506,8 +506,8 @@ export function Layout() {
   // BUG:BZ-030 - White screen on concurrent route transitions
   if (routeTransitionError) {
     return (
-      <div data-bug-id="BZ-030" className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="animate-spin h-8 w-8 border-4 border-gray-300 border-t-transparent rounded-full" />
+      <div data-bug-id="BZ-030" className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+        <div className="animate-spin h-8 w-8 border-4 border-zinc-300 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -516,7 +516,7 @@ export function Layout() {
     // BUG:BZ-027 - Protected content renders before auth check completes
     // BUG:BZ-077 - Print stylesheet missing (no @media print rules to hide app chrome)
     // BUG:BZ-080 - Focus indicator invisible (CSS removes outline globally)
-    <div data-bug-id="BZ-027" data-bug-id-077="BZ-077" data-bug-id-080="BZ-080" className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
+    <div data-bug-id="BZ-027" data-bug-id-077="BZ-077" data-bug-id-080="BZ-080" className="min-h-screen flex bg-zinc-50 dark:bg-zinc-950">
       <Sidebar
         isCollapsed={isSidebarCollapsed}
         isMobileOpen={isMobileSidebarOpen}
@@ -533,7 +533,7 @@ export function Layout() {
         {/* Breadcrumbs are derived from a hardcoded mapping instead of the actual URL,
             so they show incorrect hierarchy for many routes. E.g., /settings shows
             "Home > Projects > Settings" even though it's a top-level route. */}
-        <nav data-bug-id="BZ-028" className="px-4 lg:px-6 py-2 text-sm text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700/50 bg-white dark:bg-gray-800" aria-label="Breadcrumb">
+        <nav data-bug-id="BZ-028" className="px-4 lg:px-6 py-2 text-sm text-zinc-500 dark:text-zinc-400 border-b border-zinc-100 dark:border-zinc-700/50 bg-white dark:bg-zinc-800" aria-label="Breadcrumb">
           {(() => {
             // Bug: Breadcrumb mapping is hardcoded and doesn't match URL hierarchy
             // Should derive breadcrumbs from the actual route segments, but instead
@@ -576,9 +576,9 @@ export function Layout() {
                 {crumbs.map((crumb, idx) => (
                   <li key={idx} className="flex items-center">
                     {idx > 0 && (
-                      <ChevronRight className="w-4 h-4 mx-1 text-gray-300 dark:text-gray-600" />
+                      <ChevronRight className="w-4 h-4 mx-1 text-zinc-300 dark:text-zinc-600" />
                     )}
-                    <span className={idx === crumbs.length - 1 ? 'text-gray-900 dark:text-gray-200 font-medium' : ''}>
+                    <span className={idx === crumbs.length - 1 ? 'text-zinc-900 dark:text-zinc-200 font-medium' : ''}>
                       {crumb}
                     </span>
                   </li>

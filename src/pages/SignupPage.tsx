@@ -105,19 +105,19 @@ export function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600 rounded-xl mb-4">
             <Zap className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create your account</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Start managing projects with ProjectHub</p>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">Create your account</h1>
+          <p className="mt-2 text-zinc-600 dark:text-zinc-400">Start managing projects with ProjectHub</p>
         </div>
 
         {/* Form */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-700 p-6">
           {/* BUG:BZ-001 - Submit handler never actually calls signup API */}
           <form onSubmit={handleSubmit} className="space-y-4" data-bug-id="BZ-001">
             {error && (
@@ -166,10 +166,10 @@ export function SignupPage() {
             <label className="flex items-start gap-2">
               <input
                 type="checkbox"
-                className="w-4 h-4 mt-0.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 mt-0.5 text-blue-600 border-zinc-300 rounded focus:ring-blue-500"
                 required
               />
-              <span className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="text-sm text-zinc-600 dark:text-zinc-400">
                 I agree to the{' '}
                 <a href="#" className="text-blue-600 hover:underline">Terms of Service</a>
                 {' '}and{' '}
@@ -184,10 +184,10 @@ export function SignupPage() {
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200 dark:border-gray-700" />
+              <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white dark:bg-gray-800 text-gray-500">Or continue with</span>
+              <span className="px-2 bg-white dark:bg-zinc-800 text-zinc-500">Or continue with</span>
             </div>
           </div>
 
@@ -226,7 +226,7 @@ export function SignupPage() {
           </div>
         </div>
 
-        <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+        <p className="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
           Already have an account?{' '}
           <Link to="/login" className="text-blue-600 hover:underline font-medium">
             Sign in
