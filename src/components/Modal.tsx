@@ -1,6 +1,17 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
+declare global {
+  interface Window {
+    __PERCEPTR_TEST_BUGS__: Array<{
+      bugId: string;
+      timestamp: number;
+      description: string;
+      page: string;
+    }>;
+  }
+}
+
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -26,6 +37,25 @@ export function Modal({
   showCloseButton = true,
 }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
+
+  // BUG:BZ-021 - Opening modal pushes a history entry; browser back closes modal AND navigates away
+  useEffect(() => {
+    if (isOpen) {
+      window.history.pushState({ modal: true }, '');
+
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-021')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-021',
+            timestamp: Date.now(),
+            description: 'Modal pushes history entry - back button navigates away instead of just closing',
+            page: 'Navigation/Global'
+          });
+        }
+      }
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -56,6 +86,7 @@ export function Modal({
   return createPortal(
     <div
       ref={overlayRef}
+      data-bug-id="BZ-021"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       onClick={handleOverlayClick}
     >

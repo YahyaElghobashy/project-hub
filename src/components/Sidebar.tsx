@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -47,6 +48,12 @@ const navItems = [
 ];
 
 export function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }: SidebarProps) {
+  const location = useLocation();
+
+  // BUG:BZ-023 - Active tab is set on mount and never updates on route change
+  // useState initializer only runs once, so activeTab stays as the initial pathname
+  const [activeTab] = useState(location.pathname);
+
   return (
     <>
       {/* Mobile overlay */}
@@ -91,29 +98,47 @@ export function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }: SidebarPro
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={onMobileClose}
-              className={({ isActive }) => `
-                flex items-center gap-3 px-3 py-2 rounded-lg
-                transition-colors duration-200
-                ${isCollapsed ? 'justify-center' : ''}
-                ${
-                  isActive
-                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+        {/* BUG:BZ-023 - Active nav highlight uses stale activeTab state set on mount, never updates on route change */}
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto" data-bug-id="BZ-023">
+          {navItems.map((item) => {
+            // BUG:BZ-023 - Uses stale activeTab (set once on mount) instead of current location
+            const isItemActive = activeTab.startsWith(item.path);
+            if (isItemActive && !location.pathname.startsWith(item.path)) {
+              // Active highlight doesn't match actual route — log the bug
+              if (typeof window !== 'undefined') {
+                window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+                if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-023')) {
+                  window.__PERCEPTR_TEST_BUGS__.push({
+                    bugId: 'BZ-023',
+                    timestamp: Date.now(),
+                    description: 'Active nav highlight stuck on wrong tab - set on mount, never updates',
+                    page: 'Navigation/Global'
+                  });
                 }
-              `}
-              title={isCollapsed ? item.label : undefined}
-            >
-              {item.icon}
-              {!isCollapsed && <span className="font-medium">{item.label}</span>}
-            </NavLink>
-          ))}
+              }
+            }
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={onMobileClose}
+                className={`
+                  flex items-center gap-3 px-3 py-2 rounded-lg
+                  transition-colors duration-200
+                  ${isCollapsed ? 'justify-center' : ''}
+                  ${
+                    isItemActive
+                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }
+                `}
+                title={isCollapsed ? item.label : undefined}
+              >
+                {item.icon}
+                {!isCollapsed && <span className="font-medium">{item.label}</span>}
+              </NavLink>
+            );
+          })}
         </nav>
 
         {/* Footer */}
