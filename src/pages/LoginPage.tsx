@@ -96,6 +96,7 @@ export function LoginPage() {
       localStorage.setItem('projecthub_session', JSON.stringify({
         token: 'auth_token_' + Date.now(),
         email,
+        user: useAuthStore.getState().user,
       }));
       navigate('/dashboard');
     } catch {
@@ -235,6 +236,7 @@ export function LoginPage() {
                   localStorage.setItem('projecthub_session', JSON.stringify({
                     token: 'sso_google_' + Date.now(),
                     email: 'sso-google@example.com',
+                    user: useAuthStore.getState().user,
                   }));
                   navigate('/dashboard');
                 } catch {
@@ -271,6 +273,7 @@ export function LoginPage() {
                   localStorage.setItem('projecthub_session', JSON.stringify({
                     token: 'sso_github_' + Date.now(),
                     email: 'sso-github@example.com',
+                    user: useAuthStore.getState().user,
                   }));
                   navigate('/dashboard');
                 } catch {

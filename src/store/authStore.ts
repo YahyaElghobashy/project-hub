@@ -14,9 +14,25 @@ interface AuthStore {
   updateProfile: (updates: Partial<User>) => Promise<void>;
 }
 
+// Restore session from localStorage if available (supports page refresh)
+function getInitialAuthState(): { user: User | null; isAuthenticated: boolean } {
+  try {
+    const stored = localStorage.getItem('projecthub_session');
+    if (stored) {
+      const session = JSON.parse(stored);
+      if (session.token && session.user) {
+        return { user: session.user, isAuthenticated: true };
+      }
+    }
+  } catch { /* invalid JSON */ }
+  return { user: null, isAuthenticated: false };
+}
+
+const initialAuth = getInitialAuthState();
+
 export const useAuthStore = create<AuthStore>((set, get) => ({
-  user: null,
-  isAuthenticated: false,
+  user: initialAuth.user,
+  isAuthenticated: initialAuth.isAuthenticated,
   isLoading: false,
   authProvider: null,
 
