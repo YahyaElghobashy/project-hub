@@ -9,6 +9,7 @@ import {
   Lightbulb,
   Lock,
   Zap,
+  RefreshCw,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -23,6 +24,7 @@ const iconMap: Record<string, LucideIcon> = {
   'lightbulb': Lightbulb,
   'lock': Lock,
   'zap': Zap,
+  'refresh-cw': RefreshCw,
 };
 
 export function getProjectIcon(iconName: string, className = 'w-5 h-5') {

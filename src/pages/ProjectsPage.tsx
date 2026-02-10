@@ -96,7 +96,7 @@ export function ProjectsPage() {
         status: 'active' as ProjectStatus,
         ownerId: projects[0]?.ownerId || 'user-1',
         color: '#6366f1',
-        icon: '🔄',
+        icon: 'refresh-cw',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         dueDate: null,
