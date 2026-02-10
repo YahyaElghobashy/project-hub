@@ -369,6 +369,32 @@ export function Layout() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
 
+  // BUG:BZ-077 - Print Stylesheet Missing
+  // No @media print styles are defined, so printing the page includes the full
+  // app chrome: sidebar, navigation bar, footer, notification panel, and all
+  // interactive elements. Only the main content should print, but everything does.
+  useEffect(() => {
+    const handleBeforePrint = () => {
+      // The app has no print stylesheet — sidebar, topbar, and all chrome elements
+      // will be included in the printed output. This is detected when the user
+      // triggers Ctrl+P / Cmd+P or window.print().
+      if (typeof window !== 'undefined') {
+        window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+        if (!window.__PERCEPTR_TEST_BUGS__.find((b: { bugId: string }) => b.bugId === 'BZ-077')) {
+          window.__PERCEPTR_TEST_BUGS__.push({
+            bugId: 'BZ-077',
+            timestamp: Date.now(),
+            description: 'Print stylesheet missing - full app chrome (sidebar, nav, footer) prints instead of clean content',
+            page: 'Visual/Layout'
+          });
+        }
+      }
+    };
+
+    window.addEventListener('beforeprint', handleBeforePrint);
+    return () => window.removeEventListener('beforeprint', handleBeforePrint);
+  }, []);
+
   // BUG:BZ-080 - Focus indicator invisible
   // CSS globally removes outline on :focus but no custom focus indicator is added.
   // Keyboard users can't see which element is focused. Log when Tab key is used.
@@ -487,8 +513,9 @@ export function Layout() {
 
   return (
     // BUG:BZ-027 - Protected content renders before auth check completes
+    // BUG:BZ-077 - Print stylesheet missing (no @media print rules to hide app chrome)
     // BUG:BZ-080 - Focus indicator invisible (CSS removes outline globally)
-    <div data-bug-id="BZ-027" data-bug-id-080="BZ-080" className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
+    <div data-bug-id="BZ-027" data-bug-id-077="BZ-077" data-bug-id-080="BZ-080" className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
       <Sidebar
         isCollapsed={isSidebarCollapsed}
         isMobileOpen={isMobileSidebarOpen}

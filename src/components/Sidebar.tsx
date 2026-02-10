@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 interface SidebarProps {
@@ -84,6 +84,68 @@ export function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }: SidebarPro
     return () => window.removeEventListener('resize', checkBreakpointGap);
   }, [isMobileOpen]);
 
+  // BUG:BZ-079 - Animation Janks on Low-End Devices
+  // Uses JavaScript-based animation (setInterval + left property) instead of
+  // CSS transforms for the sidebar slide. Modifying `left` triggers layout
+  // recalculation on every frame, causing jank on low-end mobile devices.
+  // Should use CSS transform: translateX() with will-change for GPU acceleration.
+  const sidebarRef = useRef<HTMLElement>(null);
+  const animationRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const sidebar = sidebarRef.current;
+    if (!sidebar || window.innerWidth >= 1024) return;
+
+    // Cancel any ongoing animation
+    if (animationRef.current) {
+      clearInterval(animationRef.current);
+      animationRef.current = null;
+    }
+
+    const targetLeft = isMobileOpen ? 0 : -256;
+    let currentLeft = parseInt(sidebar.style.left || (isMobileOpen ? '-256' : '0'), 10);
+
+    // JS-based animation using setInterval — triggers layout thrashing on every tick
+    // Each frame recalculates layout because `left` is a layout-triggering property
+    animationRef.current = setInterval(() => {
+      const diff = targetLeft - currentLeft;
+      if (Math.abs(diff) < 2) {
+        currentLeft = targetLeft;
+        sidebar.style.left = `${currentLeft}px`;
+        if (animationRef.current) {
+          clearInterval(animationRef.current);
+          animationRef.current = null;
+        }
+        return;
+      }
+
+      // Easing step — reads offsetHeight (forces layout) then writes left (forces another)
+      const _forceLayout = sidebar.offsetHeight;
+      currentLeft += diff * 0.15;
+      sidebar.style.left = `${currentLeft}px`;
+      void _forceLayout; // prevent unused warning
+    }, 16);
+
+    if (typeof window !== 'undefined') {
+      window.__PERCEPTR_TEST_BUGS__ = window.__PERCEPTR_TEST_BUGS__ || [];
+      if (!window.__PERCEPTR_TEST_BUGS__.find(b => b.bugId === 'BZ-079')) {
+        window.__PERCEPTR_TEST_BUGS__.push({
+          bugId: 'BZ-079',
+          timestamp: Date.now(),
+          description: 'Sidebar animation uses JS setInterval + left property instead of CSS transforms - janky on low-end devices',
+          page: 'Visual/Layout'
+        });
+      }
+    }
+
+    return () => {
+      if (animationRef.current) {
+        clearInterval(animationRef.current);
+        animationRef.current = null;
+      }
+    };
+  }, [isMobileOpen]);
+
   return (
     <>
       {/* Mobile overlay */}
@@ -98,8 +160,13 @@ export function Sidebar({ isCollapsed, isMobileOpen, onMobileClose }: SidebarPro
           visibility, but the mobile hamburger menu is hidden at md: (768px+). At exactly
           768px-1023px, the sidebar is off-screen and the hamburger is gone, leaving no
           way to access navigation. Should use consistent breakpoints. */}
+      {/* BUG:BZ-079 - Sidebar animation uses JS-based left property changes
+          instead of GPU-accelerated CSS transforms. No will-change or transform3d
+          hint, causing layout thrashing and choppy animation on mobile. */}
       <aside
+        ref={sidebarRef}
         data-bug-id="BZ-078"
+        data-bug-id-079="BZ-079"
         className={`
           fixed lg:static inset-y-0 left-0 z-50
           flex flex-col

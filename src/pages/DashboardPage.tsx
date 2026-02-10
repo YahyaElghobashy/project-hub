@@ -7,7 +7,7 @@ import { SummaryCard } from '../components/Card';
 import { Avatar } from '../components/Avatar';
 import { Badge } from '../components/Badge';
 import { ProjectCard, featuredProjects } from '../components/ProjectCard';
-import { StatsGrid, weeklyStats } from '../components/StatsGrid';
+import { StatsGrid, weeklyStats, ResponsiveStatCards } from '../components/StatsGrid';
 
 interface TeamActivityItem {
   id: string;
@@ -560,6 +560,10 @@ export function DashboardPage() {
       {/* Weekly Stats — BZ-081: Grid with 33.33% columns + gap causes overflow */}
       <div className="mt-6">
         <StatsGrid items={weeklyStats} title="Weekly Stats" />
+        {/* BUG:BZ-083 - Container Query Fallback Missing
+            ResponsiveStatCards uses CSS container queries without fallback.
+            In older browsers (Safari 15, Firefox ESR), cards render at 100px min-width. */}
+        <ResponsiveStatCards items={weeklyStats} />
       </div>
 
       {/* BUG:BZ-086 - Loading spinner never disappears */}
