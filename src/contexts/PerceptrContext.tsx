@@ -22,7 +22,7 @@ export function PerceptrProvider({ children }: any) {
     // Initialize Perceptr SDK
     try {
       Perceptr.init({
-        projectId: 'proj_NBoI1OTGUEZnU3jqBQ6l6b',
+        projectId: 'proj_3KnALELTtl71QKRU63pc3',
         debug: true,
         env: 'prod',
         session: {
