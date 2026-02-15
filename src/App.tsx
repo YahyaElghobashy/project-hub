@@ -12,35 +12,38 @@ import { PerformancePage } from './pages/PerformancePage';
 import { AsyncPage } from './pages/AsyncPage';
 import { FormsPage } from './pages/FormsPage';
 import { ToastProvider } from './components/Toast';
+import { PerceptrProvider } from './contexts/PerceptrContext';
 
 function App() {
   return (
-    <ToastProvider>
-    <BrowserRouter>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+    <PerceptrProvider>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
 
-        {/* Protected routes with layout */}
-        <Route element={<Layout />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/projects/:id" element={<ProjectDetailPage />} />
-          <Route path="/team" element={<TeamPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/performance" element={<PerformancePage />} />
-          <Route path="/activity" element={<AsyncPage />} />
-          <Route path="/forms" element={<FormsPage />} />
-        </Route>
+            {/* Protected routes with layout */}
+            <Route element={<Layout />}>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/projects" element={<ProjectsPage />} />
+              <Route path="/projects/:id" element={<ProjectDetailPage />} />
+              <Route path="/team" element={<TeamPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/performance" element={<PerformancePage />} />
+              <Route path="/activity" element={<AsyncPage />} />
+              <Route path="/forms" element={<FormsPage />} />
+            </Route>
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </BrowserRouter>
-    </ToastProvider>
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
+    </PerceptrProvider>
   );
 }
 

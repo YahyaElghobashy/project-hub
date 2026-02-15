@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
-import Perceptr from '@perceptr/web-sdk';
+import { usePerceptr } from '../contexts/PerceptrContext';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { NotificationPanel } from './NotificationPanel';
@@ -13,6 +13,7 @@ export function Layout() {
   const location = useLocation();
   const { isAuthenticated, user } = useAuthStore();
   const { fetchNotifications } = useNotificationStore();
+  const { identify } = usePerceptr();
   const redirectCountRef = useRef(0);
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -141,13 +142,13 @@ export function Layout() {
   // Identify user with Perceptr SDK when authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
-      Perceptr.identify(user.id, {
+      identify(user.id, {
         email: user.email,
         name: user.name,
         role: user.role,
       });
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, identify]);
 
   // BUG:BZ-024 - Deep link loses query parameters on client-side navigation
   // When navigating internally, replace the current history entry without query params

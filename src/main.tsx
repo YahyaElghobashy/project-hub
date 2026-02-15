@@ -1,6 +1,5 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import Perceptr from '@perceptr/web-sdk';
 import './index.css';
 import App from './App.tsx';
 
@@ -18,25 +17,6 @@ if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-s
 }
 
 enableMocking().then(() => {
-  // Initialize Perceptr SDK AFTER MSW so SDK validation requests are intercepted
-  try {
-    Perceptr.init({
-      projectId: 'proj_3KnALELTtl71QKRU63pc3Q',
-      debug: true,
-      env: 'prod',
-      network: {
-        captureRequestBody: true,
-        captureResponseBody: true,
-        sanitizeHeaders: ['authorization', 'cookie'],
-      },
-    });
-    Perceptr.start().catch((e: unknown) =>
-      console.warn('Perceptr SDK start failed:', e)
-    );
-  } catch (e) {
-    console.warn('Perceptr SDK init failed:', e);
-  }
-
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <App />
